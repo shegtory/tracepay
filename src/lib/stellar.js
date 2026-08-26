@@ -45,7 +45,7 @@ async function waitForTransaction(hash, onStatus) {
 }
 
 export async function recordPayment({ sender, destination, amount, memo, onStatus }) {
-  const operation = contractClient().call("record", new Address(sender).toScVal(), new Address(destination).toScVal(), nativeToScVal(BigInt(Math.round(Number(amount) * 10_000_000)), { type: "i128" }), nativeToScVal(memo || "Signal payment", { type: "string" }));
+  const operation = contractClient().call("record", new Address(sender).toScVal(), new Address(destination).toScVal(), nativeToScVal(BigInt(Math.round(Number(amount) * 10_000_000)), { type: "i128" }), nativeToScVal(memo || "TracePay payment", { type: "string" }));
   const prepared = await buildContractTransaction(sender, operation);
   onStatus?.("awaiting-signature");
   const { signedTxXdr } = await StellarWalletsKit.signTransaction(prepared.toXDR(), { address: sender, networkPassphrase: NETWORK_PASSPHRASE });

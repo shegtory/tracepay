@@ -14,7 +14,7 @@ export default function StatusBar({
       <div className="status-bar__brand">
         <span className={`ping-dot ${isLinked ? "ping-dot--live" : ""}`} />
         <div>
-          <h1>Signal</h1>
+          <h1>TracePay</h1>
           <p>Testnet XLM transmission console</p>
         </div>
       </div>
