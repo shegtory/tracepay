@@ -1,0 +1,216 @@
+name: Orange Belt — Testnet Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      comment:
+        description: 'Deployment note (optional)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: orange-belt-deploy-testnet
+  cancel-in-progress: false
+
+env:
+  NETWORK: testnet
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: testnet
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust target
+        run: rustup target add wasm32v1-none
+
+      - name: Install Stellar CLI
+        shell: bash
+        run: |
+          curl -fsSL --retry 3 \
+            -o stellar-cli.tar.gz \
+            https://github.com/stellar/stellar-cli/releases/download/v27.0.0/stellar-cli-27.0.0-x86_64-unknown-linux-gnu.tar.gz
+          echo "357bf712f6353c28cd33c794402a3c87231757a5b305e6ef1604365af4fdd556  stellar-cli.tar.gz" | sha256sum --check
+          tar -xzf stellar-cli.tar.gz
+          sudo install -m 0755 stellar /usr/local/bin/stellar
+          stellar --version
+
+      - name: Test contracts
+        run: |
+          cargo test --locked --manifest-path contracts/payment-tracker/Cargo.toml
+          cargo test --locked --manifest-path contracts/payment-policy/Cargo.toml
+
+      - name: Build PaymentTracker WASM
+        run: stellar contract build --manifest-path contracts/payment-tracker/Cargo.toml
+
+      - name: Build PaymentPolicy WASM
+        run: stellar contract build --manifest-path contracts/payment-policy/Cargo.toml
+
+      - name: Upload WASM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: orange-belt-wasm
+          path: |
+            contracts/payment-tracker/target/wasm32v1-none/release/signal_payment_tracker.wasm
+            contracts/payment-policy/target/wasm32v1-none/release/signal_payment_policy.wasm
+          if-no-files-found: error
+
+      - name: Create Testnet deployer key
+        run: |
+          stellar keys generate deployer --network testnet --fund
+          echo "DEPLOYER_SECRET=$(stellar keys address deployer --signing-key | tail -1)" >> $GITHUB_ENV
+          echo "DEPLOYER_ADDRESS=$(stellar keys address deployer)" >> $GITHUB_ENV
+
+      - name: Deploy PaymentPolicy
+        id: deploy-policy
+        shell: bash
+        env:
+          DEPLOYER_SECRET: ${{ secrets.ORANGE_BELT_TESTNET_SECRET }}
+        run: |
+          if [ -z "$DEPLOYER_SECRET" ]; then
+            echo "::error::Missing secret ORANGE_BELT_TESTNET_SECRET. Deployment blocked."
+            echo "contract_id=NONE" >> $GITHUB_OUTPUT
+            echo "tx_hash=NONE" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          POLICY_ID=$(stellar contract deploy \
+            --wasm contracts/payment-policy/target/wasm32v1-none/release/signal_payment_policy.wasm \
+            --source-account deployer \
+            --network testnet \
+            --alias signal-payment-policy \
+            --quiet)
+
+          echo "policy_contract_id=$POLICY_ID" >> $GITHUB_OUTPUT
+
+          # Verify the contract by calling policy_count
+          VERIFY_OUTPUT=$(stellar contract invoke \
+            --id "$POLICY_ID" \
+            --source-account deployer \
+            --network testnet \
+            --send=yes \
+            -- policy_count 2>&1)
+
+          echo "Verification: $VERIFY_OUTPUT"
+
+          # Get the transaction hash from the verify output
+          TX_HASH=$(echo "$VERIFY_OUTPUT" | grep -oE '[0-9a-f]{64}' | tail -1 || echo "")
+          echo "policy_tx_hash=$TX_HASH" >> $GITHUB_OUTPUT
+
+      - name: Deploy PaymentTracker
+        id: deploy-tracker
+        shell: bash
+        env:
+          DEPLOYER_SECRET: ${{ secrets.ORANGE_BELT_TESTNET_SECRET }}
+          POLICY_CONTRACT_ID: ${{ steps.deploy-policy.outputs.policy_contract_id }}
+        run: |
+          if [ -z "$DEPLOYER_SECRET" ]; then
+            echo "::error::Missing secret ORANGE_BELT_TESTNET_SECRET. Deployment blocked."
+            echo "contract_id=NONE" >> $GITHUB_OUTPUT
+            echo "tx_hash=NONE" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          TRACKER_ID=$(stellar contract deploy \
+            --wasm contracts/payment-tracker/target/wasm32v1-none/release/signal_payment_tracker.wasm \
+            --source-account deployer \
+            --network testnet \
+            --alias signal-payment-tracker \
+            --quiet)
+
+          echo "tracker_contract_id=$TRACKER_ID" >> $GITHUB_OUTPUT
+
+          # Deploy a test payment via inter-contract call
+          DEPLOYER_ADDR=$(stellar keys address deployer)
+          VERIFY_OUTPUT=$(stellar contract invoke \
+            --id "$TRACKER_ID" \
+            --source-account deployer \
+            --network testnet \
+            --send=yes \
+            -- record_with_policy \
+            --sender "$DEPLOYER_ADDR" \
+            --destination "$DEPLOYER_ADDR" \
+            --amount 10000000 \
+            --memo "Orange Belt deployment test" \
+            --policy_contract "$POLICY_CONTRACT_ID" \
+            --policy_id 1 2>&1)
+
+          echo "Inter-contract verification: $VERIFY_OUTPUT"
+
+          TX_HASH=$(echo "$VERIFY_OUTPUT" | grep -oE '[0-9a-f]{64}' | tail -1 || echo "")
+          echo "tracker_tx_hash=$TX_HASH" >> $GITHUB_OUTPUT
+
+          # Also verify via policy_count on the policy contract
+          if [ -n "$POLICY_CONTRACT_ID" ]; then
+            POLICY_VERIFY=$(stellar contract invoke \
+              --id "$POLICY_CONTRACT_ID" \
+              --source-account deployer \
+              --network testnet \
+              --send=yes \
+              -- validate_and_record \
+              --policy_id 1 \
+              --sender "$DEPLOYER_ADDR" \
+              --amount 10000000 2>&1)
+            echo "Policy inter-contract call: $POLICY_VERIFY"
+            POLICY_TX=$(echo "$POLICY_VERIFY" | grep -oE '[0-9a-f]{64}' | tail -1 || echo "")
+            echo "policy_inter_tx_hash=$POLICY_TX" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Record deployment evidence
+        shell: bash
+        env:
+          TRACKER_ID: ${{ steps.deploy-tracker.outputs.tracker_contract_id }}
+          POLICY_ID: ${{ steps.deploy-policy.outputs.policy_contract_id }}
+          TRACKER_TX: ${{ steps.deploy-tracker.outputs.tracker_tx_hash }}
+          POLICY_TX: ${{ steps.deploy-policy.outputs.policy_tx_hash }}
+          POLICY_INTER_TX: ${{ steps.deploy-tracker.outputs.policy_inter_tx_hash }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          # Update deployment.json
+          cat > src/config/deployment.json <<EOF
+          {
+            "network": "testnet",
+            "contractId": "$TRACKER_ID",
+            "policyContractId": "$POLICY_ID",
+            "transactionHash": "$TRACKER_TX",
+            "policyTransactionHash": "$POLICY_TX",
+            "policyInterTransactionHash": "$POLICY_INTER_TX",
+            "deployedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+
+          # Update DEPLOYMENT.md
+          cat > DEPLOYMENT.md <<EOF
+          # Testnet Deployment — Orange Belt
+
+          - Network: Stellar Testnet
+          - PaymentTracker: [$TRACKER_ID](https://stellar.expert/explorer/testnet/contract/$TRACKER_ID)
+          - PaymentPolicy: [$POLICY_ID](https://stellar.expert/explorer/testnet/contract/$POLICY_ID)
+          - Tracker deployment tx: \`$TRACKER_TX\`
+          - Policy deployment tx: \`$POLICY_TX\`
+          - Inter-contract call tx: \`$POLICY_INTER_TX\`
+          - Workflow run: https://github.com/shegtory/tracepay/actions/runs/$RUN_ID
+          EOF
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/config/deployment.json DEPLOYMENT.md
+          git commit -m "chore: record Orange Belt Testnet deployment [skip ci]"
+          git push
+
+      - name: Upload deployment artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: orange-belt-deploy-artifacts
+          path: |
+            src/config/deployment.json
+            DEPLOYMENT.md
+            contracts/**/target/wasm32v1-none/release/*.wasm
+          retention-days: 30

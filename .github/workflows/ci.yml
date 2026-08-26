@@ -1,0 +1,94 @@
+name: Orange Belt CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: orange-belt-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust target
+        run: rustup target add wasm32v1-none
+
+      - name: Install Stellar CLI
+        shell: bash
+        run: |
+          curl -fsSL --retry 3 \
+            -o stellar-cli.tar.gz \
+            https://github.com/stellar/stellar-cli/releases/download/v27.0.0/stellar-cli-27.0.0-x86_64-unknown-linux-gnu.tar.gz
+          echo "357bf712f6353c28cd33c794402a3c87231757a5b305e6ef1604365af4fdd556  stellar-cli.tar.gz" | sha256sum --check
+          tar -xzf stellar-cli.tar.gz
+          sudo install -m 0755 stellar /usr/local/bin/stellar
+          stellar --version
+
+      - name: Rust format check (PaymentTracker)
+        run: cargo fmt --check --manifest-path contracts/payment-tracker/Cargo.toml
+
+      - name: Rust format check (PaymentPolicy)
+        run: cargo fmt --check --manifest-path contracts/payment-policy/Cargo.toml
+
+      - name: Contract tests (PaymentTracker)
+        run: cargo test --locked --manifest-path contracts/payment-tracker/Cargo.toml
+
+      - name: Contract tests (PaymentPolicy)
+        run: cargo test --locked --manifest-path contracts/payment-policy/Cargo.toml
+
+      - name: Build PaymentTracker WASM
+        run: stellar contract build --manifest-path contracts/payment-tracker/Cargo.toml
+
+      - name: Build PaymentPolicy WASM
+        run: stellar contract build --manifest-path contracts/payment-policy/Cargo.toml
+
+      - name: Upload PaymentTracker WASM
+        uses: actions/upload-artifact@v4
+        with:
+          name: payment-tracker-wasm
+          path: contracts/payment-tracker/target/wasm32v1-none/release/signal_payment_tracker.wasm
+          if-no-files-found: error
+
+      - name: Upload PaymentPolicy WASM
+        uses: actions/upload-artifact@v4
+        with:
+          name: payment-policy-wasm
+          path: contracts/payment-policy/target/wasm32v1-none/release/signal_payment_policy.wasm
+          if-no-files-found: error
