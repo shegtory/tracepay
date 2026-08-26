@@ -1,0 +1,32 @@
+/* Activity panel synchronization states. */
+
+.feed-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(120, 200, 255, 0.25);
+  border-top-color: #78c8ff;
+  border-radius: 50%;
+  animation: feed-spin 0.9s linear infinite;
+  margin-bottom: 8px;
+}
+
+@keyframes feed-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty-feed[data-state="error"] {
+  color: var(--danger, #ff6b6b);
+}
+
+.empty-feed[data-state="error"] small {
+  color: inherit;
+  opacity: 0.75;
+}
+
+.icon-button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}

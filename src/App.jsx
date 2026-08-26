@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CONTRACT_ID, fetchPaymentEvents, fetchXlmBalance, isContractConfigured, readRecentPayments, sendAndRecordPayment, shorten } from "./lib/stellar";
 import { connectWallet, disconnectWallet, initWalletKit, openWalletProfile } from "./lib/wallet";
+import ActivityPanel from "./components/ActivityPanel";
+import "./components/ActivityPanel.css";
 import "./App.css";
 
 const EMPTY_FORM = { destination: "", amount: "", memo: "" };
@@ -17,12 +19,16 @@ export default function App() {
   const [status, setStatus] = useState({ state: "idle", hash: "", message: "" });
   const [records, setRecords] = useState([]);
   const [eventCount, setEventCount] = useState(0);
+  const [syncState, setSyncState] = useState("loading");
   const [busy, setBusy] = useState(false);
   const sessionBaselineId = useRef(null);
   const sessionBaselineEvents = useRef(null);
 
   const refreshActivity = useCallback(async () => {
-    if (!isContractConfigured()) return;
+    if (!isContractConfigured()) {
+      setSyncState("error");
+      return;
+    }
     try {
       const [nextRecords, nextEvents] = await Promise.all([readRecentPayments(10), fetchPaymentEvents()]);
       if (sessionBaselineId.current === null) {
@@ -30,13 +36,15 @@ export default function App() {
         sessionBaselineEvents.current = new Set(nextEvents.map((event) => event.id));
         setRecords([]);
         setEventCount(0);
+        setSyncState("ready");
         return;
       }
-      const sessionRecords = nextRecords.filter((record) => record.id > sessionBaselineId.current);
-      setRecords(sessionRecords);
+      setRecords(nextRecords.filter((record) => record.id > sessionBaselineId.current));
       setEventCount(nextEvents.filter((event) => !sessionBaselineEvents.current.has(event.id)).length);
+      setSyncState("ready");
     } catch (error) {
-      setStatus((current) => current.state === "idle" ? { state: "error", hash: "", message: explainError(error) } : current);
+      setSyncState("error");
+      setStatus((current) => (current.state === "idle" ? { state: "error", hash: "", message: explainError(error) } : current));
     }
   }, []);
 
@@ -73,7 +81,12 @@ export default function App() {
       {status.state !== "idle" && <div className={`tx-status ${status.state}`}><span className="status-dot" /><div><strong>{status.state.replace("-", " ")}</strong><p>{status.message || (status.state === "pending" ? "Waiting for ledger confirmation…" : "Approve the contract call in your wallet.")}</p>{status.hash && <a href={`https://stellar.expert/explorer/testnet/tx/${status.hash}`} target="_blank" rel="noreferrer">{shorten(status.hash, 10, 10)} ↗</a>}</div></div>}
       <div className="workspace-grid">
         <form className="card composer" onSubmit={handleSubmit}><div className="card-heading"><div><span className="eyebrow">NEW ENTRY</span><h3>Send &amp; record a payment</h3></div><span className="step">01</span></div><label>Destination<input value={form.destination} onChange={(e) => setForm({ ...form, destination: e.target.value })} placeholder="G…" disabled={busy} /></label><div className="form-row"><label>Amount (XLM)<input type="number" min="0" step="0.0000001" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="0.00" disabled={busy} /></label><label>Memo<input maxLength="64" value={form.memo} onChange={(e) => setForm({ ...form, memo: e.target.value })} placeholder="Invoice #42" disabled={busy} /></label></div><button className="button primary submit" disabled={busy || !address || !isContractConfigured()}>{busy ? "Processing…" : "Send XLM & record"}<span>→</span></button><p className="form-note">This action transfers XLM first, then writes an authenticated payment record to Soroban.</p></form>
-        <section className="card live-feed"><div className="card-heading"><div><span className="eyebrow live">LIVE EVENTS</span><h3>Network activity</h3></div><button className="icon-button" onClick={refreshActivity}>↻</button></div><div className="feed-list">{records.length ? records.map((record) => <article className="feed-item" key={record.id}><span className="event-icon">↗</span><div><strong>{record.amount} XLM</strong><p>{shorten(record.sender)} → {shorten(record.destination)}</p><small>{record.memo || "No memo"} · Ledger {record.ledger}</small></div><span className="event-id">#{record.id}</span></article>) : <div className="empty-feed"><span>◌</span><p>No contract records yet.</p><small>New events appear here automatically.</small></div>}</div><footer><span><i className="pulse" />Syncing every 6s</span><span>{eventCount} events indexed</span></footer></section>
+        <ActivityPanel
+          records={records}
+          eventCount={eventCount}
+          syncState={syncState}
+          onResync={() => { setSyncState("loading"); void refreshActivity(); }}
+        />
       </div>
       <section className="contract-strip"><div><span className="eyebrow">CONTRACT</span><strong>{CONTRACT_ID ? shorten(CONTRACT_ID, 12, 12) : "Not deployed yet"}</strong></div>{CONTRACT_ID && <a href={`https://stellar.expert/explorer/testnet/contract/${CONTRACT_ID}`} target="_blank" rel="noreferrer">View on Explorer ↗</a>}</section>
     </main>
