@@ -1,4 +1,4 @@
-# Signal Payment Tracker contract
+# TracePay Payment Tracker contract
 
 Soroban contract for Yellow Belt. It writes authenticated payment records to
 persistent storage, exposes read methods, and emits a `payment` contract event.
