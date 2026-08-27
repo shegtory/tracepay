@@ -180,9 +180,9 @@ function PolicyProtectedPaymentForm({ onSubmit, submitting, selectedPolicy, onCl
 export default function App() {
   const { address, connecting, connect, disconnect, openProfile } = useWallet()
   const { balance, refresh: refreshBalance } = useBalance(address)
-  const { payments, fetchPayments, submitRegularPayment, submitPolicyProtectedPayment, refresh: refreshPayments } = usePayments()
+  const { payments, fetchPayments, submitRegularPayment, submitPolicyProtectedPayment, refresh: _refreshPayments } = usePayments()
   const { fetchPolicies, createPolicy, refresh: refreshPolicies } = usePolicies()
-  const { syncState, paymentEvents, policyEvents, lastSyncedLedger, eventCount, resync, sync } = useEventSync()
+  const { syncState, eventCount, resync } = useEventSync()
 
   const [selectedPolicy, setSelectedPolicy] = useState(null)
   const [status, setStatus] = useState({ phase: 'idle', hash: '', message: '' })
