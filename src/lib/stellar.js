@@ -395,7 +395,7 @@ export async function fetchPolicyEvents() {
 
 export function shorten(value, front = 6, back = 6) {
   if (!value) return ''
-  return value.length <= front + back ? value : `${value.slice(0, front)}…${value.slice(-back)}`
+  return value.length <= front + back ? value : `${value.slice(0, front)}...${value.slice(-back)}`
 }
 
 // ── Validation helpers ───────────────────────────────────────────────────────

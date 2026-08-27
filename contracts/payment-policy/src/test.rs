@@ -41,12 +41,7 @@ fn updates_policy_configuration() {
         &Address::generate(&env),
     );
 
-    client.update(
-        &id,
-        &75_000_000_i128,
-        &150_000_000_i128,
-        &owner,
-    );
+    client.update(&id, &75_000_000_i128, &150_000_000_i128, &owner);
 
     let policy = client.get_policy(&id).unwrap();
     assert_eq!(policy.max_amount, 75_000_000_i128);
@@ -88,12 +83,7 @@ fn rejects_unauthorized_policy_update() {
     env.set_invoker_contract_address(intruder);
 
     let result = std::panic::catch_unwind(|| {
-        client.update(
-            &id,
-            &75_000_000_i128,
-            &0_i128,
-            &Address::generate(&env),
-        );
+        client.update(&id, &75_000_000_i128, &0_i128, &Address::generate(&env));
     });
 
     assert!(result.is_err());
@@ -131,20 +121,12 @@ fn validates_approved_payment() {
     env.register_contract_wasm(contract_id, owner);
 
     // Create policy where owner is also the approved recipient
-    let policy_id = client.create(
-        &25_000_000_i128,
-        &0_i128,
-        &owner,
-    );
+    let policy_id = client.create(&25_000_000_i128, &0_i128, &owner);
 
     // Set invoker to owner for validation
     env.set_invoker_contract_address(owner);
 
-    let approved = client.validate_and_record(
-        &policy_id,
-        &sender,
-        &10_000_000_i128,
-    );
+    let approved = client.validate_and_record(&policy_id, &sender, &10_000_000_i128);
 
     assert!(approved);
     assert_eq!(client.usage_count(), 1);
@@ -189,19 +171,11 @@ fn rejects_payment_from_unauthorized_recipient() {
     env.register_contract_wasm(contract_id, owner);
 
     // Policy only allows payments from owner
-    let policy_id = client.create(
-        &25_000_000_i128,
-        &0_i128,
-        &owner,
-    );
+    let policy_id = client.create(&25_000_000_i128, &0_i128, &owner);
 
     env.set_invoker_contract_address(owner);
 
-    let approved = client.validate_and_record(
-        &policy_id,
-        &unauthorized_sender,
-        &10_000_000_i128,
-    );
+    let approved = client.validate_and_record(&policy_id, &unauthorized_sender, &10_000_000_i128);
 
     assert!(!approved);
 }
@@ -216,22 +190,14 @@ fn rejects_payment_when_policy_disabled() {
     let sender = Address::generate(&env);
     env.register_contract_wasm(contract_id, owner);
 
-    let policy_id = client.create(
-        &25_000_000_i128,
-        &0_i128,
-        &owner,
-    );
+    let policy_id = client.create(&25_000_000_i128, &0_i128, &owner);
 
     // Disable the policy
     client.set_enabled(&policy_id, false);
 
     env.set_invoker_contract_address(owner);
 
-    let approved = client.validate_and_record(
-        &policy_id,
-        &sender,
-        &10_000_000_i128,
-    );
+    let approved = client.validate_and_record(&policy_id, &sender, &10_000_000_i128);
 
     assert!(!approved);
 }
@@ -254,19 +220,11 @@ fn enforces_daily_limit() {
     env.set_invoker_contract_address(owner);
 
     // First payment: 2 XLM, should be approved
-    let approved1 = client.validate_and_record(
-        &policy_id,
-        &owner,
-        &20_000_000_i128,
-    );
+    let approved1 = client.validate_and_record(&policy_id, &owner, &20_000_000_i128);
     assert!(approved1);
 
     // Second payment: 2 XLM, would exceed daily limit of 3 XLM
-    let approved2 = client.validate_and_record(
-        &policy_id,
-        &owner,
-        &20_000_000_i128,
-    );
+    let approved2 = client.validate_and_record(&policy_id, &owner, &20_000_000_i128);
     assert!(!approved2);
 }
 

@@ -1,7 +1,6 @@
 #![no_std]
 use soroban_sdk::{
-    contract, contractevent, contractimpl, contracttype, Address, Env, String, Vec,
-    vec, Symbol,
+    contract, contractevent, contractimpl, contracttype, vec, Address, Env, String, Symbol, Vec,
 };
 
 #[contracttype]
@@ -121,10 +120,7 @@ impl PaymentTracker {
         if let (Some(policy_addr), Some(policy_id_val)) =
             (policy_contract.as_ref(), policy_id.as_ref())
         {
-            assert!(
-                policy_addr.len() == 32,
-                "invalid policy contract address"
-            );
+            assert!(policy_addr.len() == 32, "invalid policy contract address");
             assert!(*policy_id_val > 0, "policy_id must be positive");
 
             // Real inter-contract call to PaymentPolicy
@@ -134,19 +130,19 @@ impl PaymentTracker {
             // For Soroban inter-contract communication, we use contractclient::Client
             // to call functions on another contract. The caller must have appropriate
             // authorization (the invoker must be the policy owner or authorized).
-            
+
             // The actual implementation uses:
             // let policy_client = PaymentPolicyClient::new(&env, policy_addr.clone());
             // let approved = policy_client.validate_and_record(*policy_id_val, sender.clone(), amount);
-            
+
             // For this version, we demonstrate the inter-contract call pattern
             // by making the call and handling the result.
-            
+
             // Inter-contract call simulation:
             // In the full implementation, this would be a real cross-contract call
             // where PaymentTracker invokes PaymentPolicy.validate_and_record
             // and PaymentPolicy returns whether to approve or reject.
-            
+
             // For now, we pass — the real inter-contract call will be made
             // when both contracts are properly linked and deployed.
             // The pattern is established and the call is made at the contract level.
@@ -182,10 +178,7 @@ impl PaymentTracker {
     }
 
     pub fn count(env: Env) -> u64 {
-        env.storage()
-            .instance()
-            .get(&DataKey::Count)
-            .unwrap_or(0)
+        env.storage().instance().get(&DataKey::Count).unwrap_or(0)
     }
 
     pub fn get(env: Env, id: u64) -> Option<PaymentRecord> {
@@ -237,12 +230,8 @@ impl PaymentTracker {
         env.storage()
             .persistent()
             .set(&DataKey::Payment(id), record);
-        env.storage()
-            .instance()
-            .set(&DataKey::Count, &id);
-        env.storage()
-            .instance()
-            .extend_ttl(17_280, 120_960);
+        env.storage().instance().set(&DataKey::Count, &id);
+        env.storage().instance().extend_ttl(17_280, 120_960);
         env.storage()
             .persistent()
             .extend_ttl(&DataKey::Payment(id), 17_280, 120_960);

@@ -1,7 +1,5 @@
 #![no_std]
-use soroban_sdk::{
-    contract, contractevent, contractimpl, contracttype, Address, Env, String, Map,
-};
+use soroban_sdk::{contract, contractevent, contractimpl, contracttype, Address, Env, Map, String};
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -104,11 +102,7 @@ fn check_daily_reset(env: &Env, policy: &mut Policy) {
     }
 }
 
-fn validate_payment(
-    policy: &Policy,
-    sender: &Address,
-    amount: i128,
-) -> Result<(), String> {
+fn validate_payment(policy: &Policy, sender: &Address, amount: i128) -> Result<(), String> {
     require_enabled(policy);
     if amount > policy.max_amount {
         return Err(format!(
@@ -162,7 +156,11 @@ impl PaymentPolicy {
             "daily_limit must be 0 or >= max_amount"
         );
 
-        let count = env.storage().instance().get::<_, u64>(&DataKey::PolicyCount).unwrap_or(0);
+        let count = env
+            .storage()
+            .instance()
+            .get::<_, u64>(&DataKey::PolicyCount)
+            .unwrap_or(0);
         let id = count + 1;
 
         let daily_limit_option: Option<i128> = if daily_limit > 0 {
@@ -186,7 +184,9 @@ impl PaymentPolicy {
             daily_reset_ledger: env.ledger().sequence(),
         };
 
-        env.storage().persistent().set(&DataKey::Policy(id), &policy);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Policy(id), &policy);
         env.storage().instance().set(&DataKey::PolicyCount, &id);
         env.storage().instance().extend_ttl(17_280, 120_960);
 
@@ -244,7 +244,9 @@ impl PaymentPolicy {
             None => panic!("policy not found"),
         };
 
-        let caller = env.invoker_contract_address().unwrap_or_else(|| env.current_contract_address());
+        let caller = env
+            .invoker_contract_address()
+            .unwrap_or_else(|| env.current_contract_address());
         require_owner(&env, caller);
         require_enabled(&policy);
 
@@ -275,7 +277,9 @@ impl PaymentPolicy {
             daily_reset_ledger: policy.daily_reset_ledger,
         };
 
-        env.storage().persistent().set(&DataKey::Policy(id), &updated);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Policy(id), &updated);
 
         PolicyUpdated {
             id,
@@ -294,7 +298,9 @@ impl PaymentPolicy {
             None => panic!("policy not found"),
         };
 
-        let caller = env.invoker_contract_address().unwrap_or_else(|| env.current_contract_address());
+        let caller = env
+            .invoker_contract_address()
+            .unwrap_or_else(|| env.current_contract_address());
         require_owner(&env, caller);
 
         let updated = Policy {
@@ -308,7 +314,9 @@ impl PaymentPolicy {
             daily_reset_ledger: policy.daily_reset_ledger,
         };
 
-        env.storage().persistent().set(&DataKey::Policy(id), &updated);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Policy(id), &updated);
 
         PolicyEnabled { id, enabled }.publish(&env);
     }
@@ -316,12 +324,7 @@ impl PaymentPolicy {
     /// Validates a payment against this policy and records the usage.
     /// Returns true if the payment is approved, false otherwise.
     /// This is the method that PaymentTracker calls via inter-contract invocation.
-    pub fn validate_and_record(
-        env: Env,
-        policy_id: u64,
-        sender: Address,
-        amount: i128,
-    ) -> bool {
+    pub fn validate_and_record(env: Env, policy_id: u64, sender: Address, amount: i128) -> bool {
         let policy = Self::get_policy(env.clone(), policy_id);
         let policy = match policy {
             Some(p) => p,
@@ -342,8 +345,12 @@ impl PaymentPolicy {
                     .get::<_, u64>(&DataKey::UsageCount)
                     .unwrap_or(0)
                     + 1;
-                env.storage().persistent().set(&DataKey::PolicyUsage(usage_id), &usage);
-                env.storage().instance().set(&DataKey::UsageCount, &usage_id);
+                env.storage()
+                    .persistent()
+                    .set(&DataKey::PolicyUsage(usage_id), &usage);
+                env.storage()
+                    .instance()
+                    .set(&DataKey::UsageCount, &usage_id);
                 PolicyRejected {
                     id: policy_id,
                     sender,
@@ -357,7 +364,9 @@ impl PaymentPolicy {
         };
 
         // Check authorization: the caller must be the policy owner or the payment tracker
-        let caller = env.invoker_contract_address().unwrap_or_else(|| env.current_contract_address());
+        let caller = env
+            .invoker_contract_address()
+            .unwrap_or_else(|| env.current_contract_address());
         let policy_owner = policy.owner;
         // Allow the policy owner or the payment tracker (identified by convention)
         // For simplicity, the payment tracker calls this as the policy owner context
@@ -377,7 +386,9 @@ impl PaymentPolicy {
         match validate_payment(&mutable_policy, &sender, amount) {
             Ok(()) => {
                 mutable_policy.total_used_today += amount;
-                env.storage().persistent().set(&DataKey::Policy(policy_id), &mutable_policy);
+                env.storage()
+                    .persistent()
+                    .set(&DataKey::Policy(policy_id), &mutable_policy);
 
                 let usage = PolicyUsage {
                     policy_id,
@@ -393,8 +404,12 @@ impl PaymentPolicy {
                     .get::<_, u64>(&DataKey::UsageCount)
                     .unwrap_or(0)
                     + 1;
-                env.storage().persistent().set(&DataKey::PolicyUsage(usage_id), &usage);
-                env.storage().instance().set(&DataKey::UsageCount, &usage_id);
+                env.storage()
+                    .persistent()
+                    .set(&DataKey::PolicyUsage(usage_id), &usage);
+                env.storage()
+                    .instance()
+                    .set(&DataKey::UsageCount, &usage_id);
 
                 PolicyApproved {
                     id: policy_id,
@@ -421,8 +436,12 @@ impl PaymentPolicy {
                     .get::<_, u64>(&DataKey::UsageCount)
                     .unwrap_or(0)
                     + 1;
-                env.storage().persistent().set(&DataKey::PolicyUsage(usage_id), &usage);
-                env.storage().instance().set(&DataKey::UsageCount, &usage_id);
+                env.storage()
+                    .persistent()
+                    .set(&DataKey::PolicyUsage(usage_id), &usage);
+                env.storage()
+                    .instance()
+                    .set(&DataKey::UsageCount, &usage_id);
 
                 PolicyRejected {
                     id: policy_id,

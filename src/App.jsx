@@ -107,7 +107,7 @@ function PolicyProtectedPaymentForm({ onSubmit, submitting, selectedPolicy, onCl
         <input
           className="field__input field__input--mono"
           type="text"
-          placeholder="GABCDEF…WXYZ"
+          placeholder="GABCDEF...WXYZ"
           value={destination}
           onChange={(e) => setDestination(e.target.value)}
           disabled={submitting || busy}
@@ -165,7 +165,7 @@ function PolicyProtectedPaymentForm({ onSubmit, submitting, selectedPolicy, onCl
         type="submit"
         disabled={submitting || busy || !selectedPolicy || !validateStellarAddress(destination.trim()) || !validateAmount(amount)}
       >
-        {submitting ? 'Submitting…' : 'Send XLM & Record (Policy-Protected)'}
+        {submitting ? 'Submitting...' : 'Send XLM & Record (Policy-Protected)'}
         <span>→</span>
       </button>
 
@@ -258,7 +258,7 @@ export default function App() {
 
   const _handleCreatePolicy = useCallback(async (config) => {
     setBusy(true)
-    setStatus({ phase: 'preparing', hash: '', message: 'Creating policy…' })
+    setStatus({ phase: 'preparing', hash: '', message: 'Creating policy...' })
     try {
       const result = await createPolicy(
         config.maxAmount,
@@ -301,7 +301,7 @@ export default function App() {
     }
 
     setBusy(true)
-    setStatus({ phase: 'preparing', hash: '', message: 'Preparing transaction…' })
+    setStatus({ phase: 'preparing', hash: '', message: 'Preparing transaction...' })
 
     try {
       if (policy) {
@@ -383,7 +383,7 @@ export default function App() {
               onClick={handleConnect}
               disabled={busy || connecting}
             >
-              {connecting ? 'Connecting…' : 'Choose wallet'}
+              {connecting ? 'Connecting...' : 'Choose wallet'}
             </button>
           )}
         </div>
@@ -422,7 +422,7 @@ export default function App() {
             <span className="status-dot" />
             <div>
               <strong>{status.phase.replace(/-/g, ' ')}</strong>
-              <p>{status.message || (status.phase === 'pending' ? 'Waiting for ledger confirmation…' : status.phase === 'simulating' ? 'Simulating contract call…' : status.phase === 'awaiting-wallet-approval' ? 'Approve the contract call in your wallet.' : status.phase === 'submitting' ? 'Submitting to network…' : status.phase === 'confirming' ? 'Confirming on-chain…' : status.phase === 'synchronizing' ? 'Syncing with contract…' : 'Approve the contract call in your wallet.')}</p>
+              <p>{status.message || (status.phase === 'pending' ? 'Waiting for ledger confirmation...' : status.phase === 'simulating' ? 'Simulating contract call...' : status.phase === 'awaiting-wallet-approval' ? 'Approve the contract call in your wallet.' : status.phase === 'submitting' ? 'Submitting to network...' : status.phase === 'confirming' ? 'Confirming on-chain...' : status.phase === 'synchronizing' ? 'Syncing with contract...' : 'Approve the contract call in your wallet.')}</p>
               {status.hash && (
                 <a
                   href={`https://stellar.expert/explorer/testnet/tx/${status.hash}`}
@@ -474,7 +474,7 @@ export default function App() {
             records={payments}
             eventCount={eventCount}
             syncState={syncState}
-            onResync={() => { setStatus({ phase: 'synchronizing', hash: '', message: 'Resyncing…' }); void resync() }}
+            onResync={() => { setStatus({ phase: 'synchronizing', hash: '', message: 'Resyncing...' }); void resync() }}
           />
         </div>
 
