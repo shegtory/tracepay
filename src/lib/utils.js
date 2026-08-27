@@ -49,29 +49,51 @@ export function isTestnetNetwork(networkPassphrase) {
 
 export function formatErrorMessage(error) {
   if (!error) return 'An unknown error occurred.'
-  const message = String(error.message || error)
-
+  if (typeof error === 'object' && error !== null) {
+    const message = error.message || ''
+    if (!message) return 'An unknown error occurred.'
+    if (/insufficient|underfunded|balance/i.test(message)) {
+      return 'Insufficient XLM balance for this transaction.'
+    }
+    if (/cancelled/i.test(message)) {
+      return 'Payment cancelled.'
+    }
+    if (/rejected|declined|user denied/i.test(message)) {
+      return 'Transaction was rejected.'
+    }
+    if (/simulation failed|contract.*simulation/i.test(message)) {
+      return 'Contract simulation failed.'
+    }
+    if (/rpc.*error|rpc.*rejected|network.*error/i.test(message)) {
+      return 'Network error. Please check your connection.'
+    }
+    if (/rejected|declined|cancelled|user denied/i.test(message)) {
+      return 'Transaction was rejected.'
+    }
+    return 'An unknown error occurred.'
+  }
+  const message = String(error)
   if (/insufficient|underfunded|balance/i.test(message)) {
     return 'Insufficient XLM balance for this transaction.'
+  }
+  if (/cancelled/i.test(message)) {
+    return 'Payment cancelled.'
+  }
+  if (/rejected|declined|user denied/i.test(message)) {
+    return 'Transaction was rejected.'
   }
   if (/rpc.*error|rpc.*rejected|network.*error/i.test(message)) {
     return 'Network error. Please check your connection.'
   }
-  if (/rejected|declined|cancelled|user denied/i.test(message)) {
+  if (/rejected|declined|user denied/i.test(message)) {
     return 'Transaction was rejected.'
   }
-  if (/simulation failed|contract.*simulation/i.test(message)) {
-    return 'Contract simulation failed.'
-  }
-  if (/wrong network|network mismatch|not testnet/i.test(message)) {
-    return 'Wrong network. Please switch to Stellar Testnet.'
-  }
-  if (/invalid.*address|bad.*address|address.*invalid/i.test(message)) {
-    return 'Invalid Stellar address.'
-  }
-  if (/not found|not installed|unavailable|wallet.*not/i.test(message)) {
-    return 'Wallet not found or unavailable.'
-  }
+  return message
+}
+
+export function formatContractError(error) {
+  if (!error) return 'An unknown error occurred.'
+  const message = String(error.message || error)
   if (/policy.*disabled|policy.*inactive/i.test(message)) {
     return 'Policy is disabled.'
   }
@@ -81,6 +103,5 @@ export function formatErrorMessage(error) {
   if (/unauthorized|not.*owner|permission/i.test(message)) {
     return 'Unauthorized operation.'
   }
-
   return message
 }

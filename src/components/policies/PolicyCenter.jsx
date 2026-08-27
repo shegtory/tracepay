@@ -44,7 +44,7 @@ export default function PolicyCenter({ onSelectPolicy, selectedPolicyId, onClear
     setShowForm(true)
   }, [])
 
-  const handleUpdate = useCallback(async (config) => {
+  const _handleUpdate = useCallback(async (config) => {
     if (!editingPolicy) return
     setSubmitting(true)
     try {

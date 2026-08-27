@@ -190,7 +190,6 @@ export default function App() {
   const [lastAction, setLastAction] = useState(null)
   const sessionBaselineId = useRef(null)
   const sessionBaselineEvents = useRef(null)
-  const busyRef = useRef(false)
 
   const refreshActivity = useCallback(async () => {
     if (!address) {
@@ -198,9 +197,7 @@ export default function App() {
       return
     }
     try {
-      const [nextPayments] = await Promise.all([
-        fetchPayments(),
-      ])
+      const nextPayments = await fetchPayments()
 
       if (sessionBaselineId.current === null) {
         sessionBaselineId.current = nextPayments.reduce((latest, record) => Math.max(latest, record.id), 0)
@@ -259,7 +256,7 @@ export default function App() {
     setLastAction(null)
   }, [disconnect])
 
-  const handleCreatePolicy = useCallback(async (config) => {
+  const _handleCreatePolicy = useCallback(async (config) => {
     setBusy(true)
     setStatus({ phase: 'preparing', hash: '', message: 'Creating policy…' })
     try {

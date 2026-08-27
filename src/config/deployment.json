@@ -1,5 +1,6 @@
 {
   "network": "testnet",
   "contractId": "CB6LYC7FWQTOWHPA3FZRYAOY7QSNUGIPQEN6U3BVCC3YKDDMYQGDHZ2J",
-  "transactionHash": "b5fea73178ce5284ccd316c19ff5079fd76b60fcbe94f82eb7a631a95eb9b373"
+  "transactionHash": "b5fea73178ce5284ccd316c19ff5079fd76b60fcbe94f82eb7a631a95eb9b373",
+  "policyContractId": ""
 }
