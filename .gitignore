@@ -5,3 +5,7 @@ dist/
 target/
 .tools/
 *.log
+HERMES.md
+*HANDOFF*.md
+*ORCHESTRATION*.md
+AGENTS.md
