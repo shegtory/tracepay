@@ -7,7 +7,9 @@ export function isValidStellarAddress(address) {
 
 export function validateTransactionAmount(amount) {
   if (!amount || typeof amount !== 'string') return false
-  const num = Number(amount)
+  const trimmed = amount.trim()
+  if (!trimmed) return false
+  const num = Number(trimmed)
   if (isNaN(num)) return false
   if (num <= 0) return false
   if (!isFinite(num)) return false
@@ -34,13 +36,13 @@ export function formatTransactionStatus(status) {
 export function shortenAddress(address, chars = 6) {
   if (!address) return ''
   if (address.length <= chars * 2) return address
-  return `${address.slice(0, chars)}…${address.slice(-chars)}`
+  return `${address.slice(0, chars)}...${address.slice(-chars)}`
 }
 
 export function formatContractId(contractId, chars = 12) {
   if (!contractId) return 'Not deployed'
   if (contractId.length <= chars * 2) return contractId
-  return `${contractId.slice(0, chars)}…${contractId.slice(-chars)}`
+  return `${contractId.slice(0, chars)}...${contractId.slice(-chars)}`
 }
 
 export function isTestnetNetwork(networkPassphrase) {
@@ -58,19 +60,34 @@ export function formatErrorMessage(error) {
     if (/cancelled/i.test(message)) {
       return 'Payment cancelled.'
     }
-    if (/rejected|declined|user denied/i.test(message)) {
+    if (/rpc.*error|rpc.*rejected|network.*error/i.test(message)) {
+      return 'Network error. Please check your connection.'
+    }
+    if (/rejected|declined|user denied|cancel/i.test(message)) {
       return 'Transaction was rejected.'
     }
     if (/simulation failed|contract.*simulation/i.test(message)) {
       return 'Contract simulation failed.'
     }
-    if (/rpc.*error|rpc.*rejected|network.*error/i.test(message)) {
-      return 'Network error. Please check your connection.'
+    if (/wrong network|network mismatch|not testnet/i.test(message)) {
+      return 'Wrong network. Please switch to Stellar Testnet.'
     }
-    if (/rejected|declined|cancelled|user denied/i.test(message)) {
-      return 'Transaction was rejected.'
+    if (/invalid.*address|bad.*address|address.*invalid/i.test(message)) {
+      return 'Invalid Stellar address.'
     }
-    return 'An unknown error occurred.'
+    if (/not found|not installed|unavailable|wallet.*not/i.test(message)) {
+      return 'Wallet not found or unavailable.'
+    }
+    if (/policy.*disabled|policy.*inactive/i.test(message)) {
+      return 'Policy is disabled.'
+    }
+    if (/exceeds.*limit|limit.*exceeded/i.test(message)) {
+      return 'Payment exceeds policy limit.'
+    }
+    if (/unauthorized|not.*owner|permission/i.test(message)) {
+      return 'Unauthorized operation.'
+    }
+    return message
   }
   const message = String(error)
   if (/insufficient|underfunded|balance/i.test(message)) {
@@ -79,14 +96,29 @@ export function formatErrorMessage(error) {
   if (/cancelled/i.test(message)) {
     return 'Payment cancelled.'
   }
-  if (/rejected|declined|user denied/i.test(message)) {
+  if (/rejected|declined|user denied|cancel/i.test(message)) {
     return 'Transaction was rejected.'
   }
   if (/rpc.*error|rpc.*rejected|network.*error/i.test(message)) {
     return 'Network error. Please check your connection.'
   }
-  if (/rejected|declined|user denied/i.test(message)) {
-    return 'Transaction was rejected.'
+  if (/wrong network|network mismatch|not testnet/i.test(message)) {
+    return 'Wrong network. Please switch to Stellar Testnet.'
+  }
+  if (/invalid.*address|bad.*address|address.*invalid/i.test(message)) {
+    return 'Invalid Stellar address.'
+  }
+  if (/not found|not installed|unavailable|wallet.*not/i.test(message)) {
+    return 'Wallet not found or unavailable.'
+  }
+  if (/policy.*disabled|policy.*inactive/i.test(message)) {
+    return 'Policy is disabled.'
+  }
+  if (/exceeds.*limit|limit.*exceeded/i.test(message)) {
+    return 'Payment exceeds policy limit.'
+  }
+  if (/unauthorized|not.*owner|permission/i.test(message)) {
+    return 'Unauthorized operation.'
   }
   return message
 }

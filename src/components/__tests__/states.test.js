@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 
 // Stub StellarWalletsKit for tests
 const mockStellarWalletsKit = {
-  getState: vi.fn(() => ({ address: 'GDQJQLZ7DJX5OPSQ7A7MZ5323PV6PX2FNQUPWQXSLW3OFCOO7IS7C4L' })),
+  getState: vi.fn(() => ({ address: 'GDQJQLZ7DJX5OPSQ7A7MZ5323PV6PX2FNQUPWQXSLW3OFCOO7IS7C4LX' })),
   init: vi.fn(),
   authModal: vi.fn(),
   disconnect: vi.fn(),
@@ -63,7 +63,7 @@ describe('Mobile navigation behavior', () => {
           </div>
           <div class="wallet-area">
             <span class="network-pill">TESTNET</span>
-            <button class="wallet-chip">GDQJQL…S7C4L</button>
+            <button class="wallet-chip">GDQJQL...S7C4L</button>
             <button class="button ghost">Disconnect</button>
           </div>
         </header>

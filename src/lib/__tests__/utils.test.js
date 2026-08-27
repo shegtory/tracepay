@@ -3,11 +3,11 @@ import { isValidStellarAddress, validateTransactionAmount, formatErrorMessage } 
 
 describe('Stellar address validation', () => {
   it('accepts valid G-address', () => {
-    expect(isValidStellarAddress('GDQJQLZ7DJX5OPSQ7A7MZ5323PV6PX2FNQUPWQXSLW3OFCOO7IS7C4L')).toBe(true)
+    expect(isValidStellarAddress('GDQJQLZ7DJX5OPSQ7A7MZ5323PV6PX2FNQUPWQXSLW3OFCOO7IS7C4LX')).toBe(true)
   })
 
   it('accepts valid M-address', () => {
-    expect(isValidStellarAddress('MDQJQLZ7DJX5OPSQ7A7MZ5323PV6PX2FNQUPWQXSLW3OFCOO7IS7C4L')).toBe(true)
+    expect(isValidStellarAddress('MDQJQLZ7DJX5OPSQ7A7MZ5323PV6PX2FNQUPWQXSLW3OFCOO7IS7C4LX')).toBe(true)
   })
 
   it('rejects address that is too short', () => {

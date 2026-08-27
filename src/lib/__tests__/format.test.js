@@ -2,13 +2,13 @@ import { describe, it, expect } from 'vitest'
 import { shortenAddress, formatContractId, isTestnetNetwork } from '../../lib/utils'
 
 describe('Address shortening', () => {
-  const longAddress = 'GDQJQLZ7DJX5OPSQ7A7MZ5323PV6PX2FNQUPWQXSLW3OFCOO7IS7C4L'
+  const longAddress = 'GDQJQLZ7DJX5OPSQ7A7MZ5323PV6PX2FNQUPWQXSLW3OFCOO7IS7C4LX'
 
   it('shortens a long Stellar address', () => {
     const result = shortenAddress(longAddress, 6)
-    expect(result).toBe('GDQJQL…S7C4L')
+    expect(result).toBe('GDQJQL...S7C4LX')
     expect(result.length).toBeLessThan(longAddress.length)
-    expect(result).toContain('…')
+    expect(result).toContain('...')
   })
 
   it('returns full address when short enough', () => {
@@ -26,14 +26,14 @@ describe('Address shortening', () => {
   })
 
   it('uses specified character count for front and back', () => {
-    expect(shortenAddress(longAddress, 4)).toBe('GDQJ…C4L')
-    expect(shortenAddress(longAddress, 8)).toBe('GDQJQLZD…7IS7C4L')
+    expect(shortenAddress(longAddress, 4)).toBe('GDQJ...C4LX')
+    expect(shortenAddress(longAddress, 8)).toBe('GDQJQLZ7...7IS7C4LX')
   })
 
   it('always shows at least the leading character', () => {
     const result = shortenAddress(longAddress, 1)
     expect(result).toContain('G')
-    expect(result).toContain('…')
+    expect(result).toContain('...')
   })
 })
 
@@ -43,7 +43,7 @@ describe('Contract ID formatting', () => {
 
   it('shortens a long contract ID', () => {
     const result = formatContractId(validContractId, 12)
-    expect(result).toBe('CB6LYC7FW…GDHZ2J')
+    expect(result).toBe('CB6LYC7FWQTO...KDDMYQGDHZ2J')
     expect(result.length).toBeLessThan(validContractId.length)
   })
 
@@ -61,14 +61,14 @@ describe('Contract ID formatting', () => {
   })
 
   it('uses specified character count', () => {
-    expect(formatContractId(validContractId, 8)).toBe('CB6LYC7F…YQGDHZ2J')
-    expect(formatContractId(validContractId, 4)).toBe('CB6L…DHZ2J')
+    expect(formatContractId(validContractId, 8)).toBe('CB6LYC7F...YQGDHZ2J')
+    expect(formatContractId(validContractId, 4)).toBe('CB6L...HZ2J')
   })
 
   it('always preserves C-prefix for contract IDs', () => {
     const result = formatContractId(validContractId, 6)
     expect(result).toContain('C')
-    expect(result).toContain('…')
+    expect(result).toContain('...')
   })
 })
 

@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { isValidStellarAddress, validateTransactionAmount, formatErrorMessage } from '../../lib/utils'
 
 describe('Stellar address validation', () => {
-  const validGAddress = 'GDQJQLZ7DJX5OPSQ7A7MZ5323PV6PX2FNQUPWQXSLW3OFCOO7IS7C4L'
-  const validMAddress = 'MDQJQLZ7DJX5OPSQ7A7MZ5323PV6PX2FNQUPWQXSLW3OFCOO7IS7C4L'
+  const validGAddress = 'GDQJQLZ7DJX5OPSQ7A7MZ5323PV6PX2FNQUPWQXSLW3OFCOO7IS7C4LX'
+  const validMAddress = 'MDQJQLZ7DJX5OPSQ7A7MZ5323PV6PX2FNQUPWQXSLW3OFCOO7IS7C4LX'
 
   it('accepts valid G-address', () => {
     expect(isValidStellarAddress(validGAddress)).toBe(true)
@@ -88,7 +88,7 @@ describe('Transaction amount validation', () => {
   })
 
   it('handles string with whitespace', () => {
-    expect(validateTransactionAmount('  10  ')).toBe(false)
+    expect(validateTransactionAmount('  10  ')).toBe(true)
   })
 
   it('accepts scientific notation for small values', () => {
