@@ -1,6 +1,6 @@
 import { shorten } from '../../lib/stellar'
 
-export default function PolicyList({ policies, loading, onSelect, onEdit, onToggle, onDelete, selectedId }) {
+export default function PolicyList({ policies, loading, onSelect, onEdit, onToggle, selectedId }) {
   if (loading) {
     return (
       <div className="policy-list policy-list--loading">

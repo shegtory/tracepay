@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect } from 'vitest'
+import { waitFor } from '@testing-library/react'
 
 // Stub StellarWalletsKit for tests
 const mockStellarWalletsKit = {
@@ -75,7 +75,8 @@ describe('Mobile navigation behavior', () => {
 
     // Wallet area should contain multiple elements
     const children = walletArea?.children
-    expect(children?.length).toBeGreaterThan(0)
+    const childrenArray = Array.from(children || [])
+    expect(childrenArray.length).toBeGreaterThan(0)
   })
 })
 
@@ -94,7 +95,7 @@ describe('Transaction state rendering', () => {
   ]
 
   it('renders each transaction state with correct class', () => {
-    transactionStates.forEach(({ phase, expectedClass }) => {
+    transactionStates.forEach(({ phase }) => {
       document.body.innerHTML = `
         <div class="tx-status ${phase}">
           <span class="status-dot"></span>

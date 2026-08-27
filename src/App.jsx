@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useWallet, useBalance, usePayments, usePolicies, useEventSync, TRANSACTION_STATES } from './hooks/useContractOperations'
+import { useWallet, useBalance, usePayments, usePolicies, useEventSync } from './hooks/useContractOperations'
 import { shorten, validateStellarAddress, validateAmount, explainError } from './lib/stellar'
 import PolicyCenter from './components/policies/PolicyCenter'
 import ActivityPanel from './components/ActivityPanel'
 import './App.css'
 
 const EMPTY_FORM = { destination: '', amount: '', memo: '' }
-const ADDRESS_RE = /^G[A-Z2-7]{55}$/
 
 function PolicyProtectedPaymentForm({ onSubmit, submitting, selectedPolicy, onClearSelection, busy }) {
   const [destination, setDestination] = useState('')
@@ -179,13 +178,12 @@ function PolicyProtectedPaymentForm({ onSubmit, submitting, selectedPolicy, onCl
 }
 
 export default function App() {
-  const { address, connecting, error: walletError, connect, disconnect, openProfile } = useWallet()
-  const { balance, loading: balanceLoading, refresh: refreshBalance } = useBalance(address)
-  const { payments, loading: paymentsLoading, error: paymentsError, fetchPayments, submitRegularPayment, submitPolicyProtectedPayment, refresh } = usePayments()
-  const { policies, loading: policiesLoading, error: policiesError, fetchPolicies, createPolicy, updatePolicy, setEnabled, refresh: refreshPolicies } = usePolicies()
+  const { address, connecting, connect, disconnect, openProfile } = useWallet()
+  const { balance, refresh: refreshBalance } = useBalance(address)
+  const { payments, fetchPayments, submitRegularPayment, submitPolicyProtectedPayment, refresh: refreshPayments } = usePayments()
+  const { fetchPolicies, createPolicy, refresh: refreshPolicies } = usePolicies()
   const { syncState, paymentEvents, policyEvents, lastSyncedLedger, eventCount, resync, sync } = useEventSync()
 
-  const [form, setForm] = useState(EMPTY_FORM)
   const [selectedPolicy, setSelectedPolicy] = useState(null)
   const [status, setStatus] = useState({ phase: 'idle', hash: '', message: '' })
   const [busy, setBusy] = useState(false)
@@ -200,10 +198,8 @@ export default function App() {
       return
     }
     try {
-      const [nextPayments, nextPaymentEvents, nextPolicyEvents] = await Promise.all([
+      const [nextPayments] = await Promise.all([
         fetchPayments(),
-        Promise.resolve([]), // simplified — full implementation would poll both
-        Promise.resolve([]),
       ])
 
       if (sessionBaselineId.current === null) {

@@ -1,11 +1,11 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 
 // Mock Stellar SDK classes for testing
-const mockHorizon = {
+const _mockHorizon = {
   loadAccount: vi.fn(),
 }
 
-const mockRpcServer = {
+const _mockRpcServer = {
   getAccount: vi.fn(),
   prepareTransaction: vi.fn(),
   getTransaction: vi.fn(),
@@ -16,7 +16,7 @@ const mockRpcServer = {
 }
 
 // Mock WalletKit
-const mockWalletKit = {
+const _mockWalletKit = {
   init: vi.fn(),
   getState: vi.fn(() => ({ address: 'GDQJQLZ7DJX5OPSQ7A7MZ5323PV6PX2FNQUPWQXSLW3OFCOO7IS7C4L' })),
   authModal: vi.fn(),

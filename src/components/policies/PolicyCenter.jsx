@@ -5,11 +5,10 @@ import PolicyForm from './PolicyForm'
 import PolicyList from './PolicyList'
 import { shorten } from '../../lib/stellar'
 
-export default function PolicyCenter({ onSelectPolicy, selectedPolicyId, onClearSelection }) {
-  const { policies, loading, error, createPolicy, updatePolicy, setEnabled, refresh } = usePolicies()
+export default function PolicyCenter({ onSelectPolicy, selectedPolicyId, onClearSelection: _onClearSelection }) {
+  const { policies, loading, createPolicy, updatePolicy, setEnabled, refresh } = usePolicies()
   const { address } = useWallet()
 
-  const [showForm, setShowForm] = useState(false)
   const [editingPolicy, setEditingPolicy] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [lastAction, setLastAction] = useState(null)

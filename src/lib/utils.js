@@ -54,8 +54,14 @@ export function formatErrorMessage(error) {
   if (/insufficient|underfunded|balance/i.test(message)) {
     return 'Insufficient XLM balance for this transaction.'
   }
+  if (/rpc.*error|rpc.*rejected|network.*error/i.test(message)) {
+    return 'Network error. Please check your connection.'
+  }
   if (/rejected|declined|cancelled|user denied/i.test(message)) {
     return 'Transaction was rejected.'
+  }
+  if (/simulation failed|contract.*simulation/i.test(message)) {
+    return 'Contract simulation failed.'
   }
   if (/wrong network|network mismatch|not testnet/i.test(message)) {
     return 'Wrong network. Please switch to Stellar Testnet.'
@@ -65,12 +71,6 @@ export function formatErrorMessage(error) {
   }
   if (/not found|not installed|unavailable|wallet.*not/i.test(message)) {
     return 'Wallet not found or unavailable.'
-  }
-  if (/simulation failed|contract.*simulation/i.test(message)) {
-    return 'Contract simulation failed.'
-  }
-  if (/rpc.*error|rpc.*rejected|network.*error/i.test(message)) {
-    return 'Network error. Please check your connection.'
   }
   if (/policy.*disabled|policy.*inactive/i.test(message)) {
     return 'Policy is disabled.'
