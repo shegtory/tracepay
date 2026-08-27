@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import * as stellar from '../lib/stellar'
-import { StellarWalletsKit, KitEventType } from '@creit.tech/stellar-wallets-kit/sdk'
+import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit/sdk'
+import { KitEventType, Networks } from '@creit.tech/stellar-wallets-kit/types'
 import { defaultModules } from '@creit.tech/stellar-wallets-kit/modules/utils'
-import { Networks } from '@creit.tech/stellar-wallets-kit/types'
 
 // ── Transaction state machine ────────────────────────────────────────────────
 
@@ -309,7 +309,7 @@ export function usePayments() {
 // ── Event synchronization hook ────────────────────────────────────────────────
 
 export function useEventSync() {
-  const [syncState, setSyncState] = useState('loading') // loading, ready, error, empty
+  const [syncState, setSyncState] = useState('loading')
   const [paymentEvents, setPaymentEvents] = useState([])
   const [policyEvents, setPolicyEvents] = useState([])
   const [lastSyncedLedger, setLastSyncedLedger] = useState(null)
@@ -338,7 +338,6 @@ export function useEventSync() {
 
       setLastSyncedLedger(currentLedger)
 
-      // Deduplicate payment events by id
       const newPaymentIds = new Set()
       const deduplicatedPayments = []
       for (const event of newPaymentEvents) {
@@ -349,7 +348,6 @@ export function useEventSync() {
         }
       }
 
-      // Deduplicate policy events by id
       const newPolicyIds = new Set()
       const deduplicatedPolicies = []
       for (const event of newPolicyEvents) {
@@ -361,7 +359,6 @@ export function useEventSync() {
       }
 
       setPaymentEvents((prev) => {
-        // Merge keeping order: new events first, then existing
         const existingIds = new Set(prev.map((e) => e.id))
         const uniqueNew = deduplicatedPayments.filter((e) => !existingIds.has(e.id))
         return [...uniqueNew, ...prev]
@@ -390,7 +387,6 @@ export function useEventSync() {
   }, [paymentEvents.length, policyEvents.length])
 
   const resync = useCallback(async () => {
-    // Clear the seen events set and re-sync from scratch
     seenEventsRef.current = new Set()
     setPaymentEvents([])
     setPolicyEvents([])
@@ -400,7 +396,6 @@ export function useEventSync() {
     await sync()
   }, [sync])
 
-  // Initial sync and periodic polling
   useEffect(() => {
     sync()
 
