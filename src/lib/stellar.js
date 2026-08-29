@@ -232,17 +232,17 @@ export async function setPolicyEnabled(policyId, enabled, onStatus) {
 }
 
 export async function sendAndRecordPayment({ sender, destination, amount, memo, onStatus }) {
-  const source = await horizon.loadAccount(sender)
+  const source = await getHorizonServer().loadAccount(sender)
   let destinationExists = true
   try {
-    await horizon.loadAccount(destination)
+    await getHorizonServer().loadAccount(destination)
   } catch (error) {
     if (error?.response?.status === 404) destinationExists = false
     else throw error
   }
 
   if (!destinationExists) {
-    const ledgers = await horizon.ledgers().order('desc').limit(1).call()
+    const ledgers = await getHorizonServer().ledgers().order('desc').limit(1).call()
     const baseReserve = Number(ledgers.records[0]?.base_reserve_in_stroops || 5_000_000) / 10_000_000
     const minimumStartingBalance = baseReserve * 2
     if (Number(amount) < minimumStartingBalance) {
@@ -269,7 +269,7 @@ export async function sendAndRecordPayment({ sender, destination, amount, memo, 
     address: sender,
     networkPassphrase: NETWORK_PASSPHRASE,
   })
-  const paymentResult = await horizon.submitTransaction(
+  const paymentResult = await getHorizonServer().submitTransaction(
     TransactionBuilder.fromXDR(signedPaymentXdr, NETWORK_PASSPHRASE),
   )
 
