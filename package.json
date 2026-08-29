@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint src",
-    "typecheck": "tsc --noEmit --jsx react-jsx --esModuleInterop --moduleResolution node --allowJs --checkJs src/hooks/useContractOperations.js src/App.jsx src/lib/stellar.js",
+    "typecheck": "tsc --noEmit --jsx react-jsx --esModuleInterop --resolveJsonModule --allowJs --checkJs src/hooks/useContractOperations.js src/App.jsx src/lib/stellar.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview"
@@ -16,19 +16,17 @@
     "@creit.tech/stellar-wallets-kit": "^2.5.0",
     "@stellar/freighter-api": "^6.0.1",
     "@stellar/stellar-sdk": "^16.2.0",
-    "jsdom": "^30.0.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.1.0",
+    "@types/json-schema": "^7.0.12",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
     "oxlint": "^1.71.0",
-    "typescript": "^5.7.2",
+    "typescript": "^5.9.3",
     "vite": "^8.1.1",
-    "vitest": "^3.0.0"
+    "vitest": "^3.2.4"
   }
 }

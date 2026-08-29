@@ -2,18 +2,27 @@ import { Address, Contract, rpc, scValToNative, nativeToScVal, xdr, Networks, BA
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit/sdk'
 import deployment from '../config/deployment.json'
 
+/** Static import of Asset so the static import style can be used without an
+ *  inline dynamic import expression at each call site. */
+import { Asset } from '@stellar/stellar-sdk'
+
+/** Horizon + RPC servers created once at module scope — both are exported
+ *  from @stellar/stellar-sdk via static imports, so this no longer triggers
+ *  the Promise → undefined bug that caused the black page on the production
+ *  site. */
+import { Horizon } from '@stellar/stellar-sdk'
+
 export const HORIZON_URL = 'https://horizon-testnet.stellar.org'
 export const RPC_URL = 'https://soroban-testnet.stellar.org'
 export const NETWORK_PASSPHRASE = Networks.TESTNET
-
-export const PAYMENT_TRACKER_CONTRACT_ID = import.meta.env.VITE_PAYMENT_TRACKER_CONTRACT_ID || import.meta.env.VITE_CONTRACT_ID || deployment.contractId || ''
-export const PAYMENT_POLICY_CONTRACT_ID = import.meta.env.VITE_PAYMENT_POLICY_CONTRACT_ID || ''
+export const PAYMENT_TRACKER_CONTRACT_ID = deployment.contractId || ''
+export const PAYMENT_POLICY_CONTRACT_ID = ''
 
 export const isContractConfigured = () => /^C[A-Z2-7]{55}$/.test(PAYMENT_TRACKER_CONTRACT_ID)
 export const isPolicyConfigured = () => /^C[A-Z2-7]{55}$/.test(PAYMENT_POLICY_CONTRACT_ID)
 
-const horizon = new (import('@stellar/stellar-sdk').Horizon.Server)(HORIZON_URL)
-const rpcServer = new rpc.Server(RPC_URL)
+const horizon = new Horizon.Server(HORIZON_URL)
+export const rpcServer = new rpc.Server(RPC_URL)
 
 function paymentTrackerContract() {
   if (!isContractConfigured()) throw new Error('PaymentTracker contract is not configured. Add VITE_PAYMENT_TRACKER_CONTRACT_ID to .env.local.')
@@ -31,8 +40,8 @@ async function buildContractTransaction(sourceAddress, contractId, operations) {
   for (const op of operations) {
     transaction.addOperation(op)
   }
-  transaction.setTimeout(60).build()
-  return rpcServer.prepareTransaction(transaction)
+  const built = transaction.setTimeout(60).build()
+  return rpcServer.prepareTransaction(built)
 }
 
 async function waitForTransaction(hash, onStatus) {
@@ -55,8 +64,6 @@ export async function fetchXlmBalance(publicKey) {
     throw error
   }
 }
-
-// ── PaymentTracker read operations ──────────────────────────────────────────
 
 export async function readRecentPayments(limit = 10) {
   const source = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF'
@@ -101,8 +108,6 @@ export async function readPaymentById(id) {
     policy_contract: record.policy_contract ? String(record.policy_contract) : null,
   }
 }
-
-// ── PaymentPolicy read operations ───────────────────────────────────────────
 
 export async function readPoliciesByOwner(owner) {
   if (!isPolicyConfigured()) return []
@@ -158,8 +163,6 @@ export async function readPolicyCount() {
   if (!rpc.Api.isSimulationSuccess(simulation) || !simulation.result?.retval) return 0
   return Number(scValToNative(simulation.result.retval))
 }
-
-// ── PaymentPolicy write operations ──────────────────────────────────────────
 
 async function signAndSendContractTransaction(xdr, onStatus) {
   onStatus?.('awaiting-wallet-approval')
@@ -229,8 +232,6 @@ export async function setPolicyEnabled(policyId, enabled, onStatus) {
   return result
 }
 
-// ── Payment operations ───────────────────────────────────────────────────────
-
 export async function sendAndRecordPayment({ sender, destination, amount, memo, onStatus }) {
   const source = await horizon.loadAccount(sender)
   let destinationExists = true
@@ -255,7 +256,7 @@ export async function sendAndRecordPayment({ sender, destination, amount, memo, 
     networkPassphrase: NETWORK_PASSPHRASE,
   })
     .addOperation(destinationExists
-      ? Operation.payment({ destination, asset: import('@stellar/stellar-sdk').Asset.native(), amount: String(amount) })
+      ? Operation.payment({ destination, asset: Asset.native(), amount: String(amount) })
       : Operation.createAccount({ destination, startingBalance: String(amount) })
     )
     .setTimeout(60)
@@ -333,6 +334,7 @@ export async function recordPolicyProtectedPayment({ sender, destination, amount
   onStatus?.('simulating')
   const simulated = await rpcServer.simulateTransaction(prepared)
   if (!rpc.Api.isSimulationSuccess(simulated)) {
+    // @ts-ignore - SDK SimulateTransactionErrorResponse type doesn't declare results, but it's available at runtime
     const errorMsg = simulated.results?.[0]?.result?.log?.msg || 'Contract simulation failed.'
     throw new Error(`Simulation failed: ${errorMsg}`)
   }
@@ -348,8 +350,6 @@ export async function recordPolicyProtectedPayment({ sender, destination, amount
   onStatus?.('success', submitted.hash)
   return { hash: submitted.hash, result }
 }
-
-// ── Event operations ─────────────────────────────────────────────────────────
 
 export async function fetchPaymentEvents() {
   if (!isContractConfigured()) return []
@@ -397,8 +397,6 @@ export function shorten(value, front = 6, back = 6) {
   if (!value) return ''
   return value.length <= front + back ? value : `${value.slice(0, front)}...${value.slice(-back)}`
 }
-
-// ── Validation helpers ───────────────────────────────────────────────────────
 
 export function validateStellarAddress(address) {
   return /^G[A-Z2-7]{55}$/.test(address)

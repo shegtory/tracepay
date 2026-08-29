@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { useWallet, useBalance, usePayments, usePolicies, useEventSync } from './hooks/useContractOperations'
-import { shorten, validateStellarAddress, validateAmount, explainError } from './lib/stellar'
+import { useState, useCallback, useEffect, useRef } from 'react'
+import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit/sdk'
+import { useWallet, useBalance, usePayments, usePolicies, useEventSync, fetchBalance } from './hooks/useContractOperations'
+import { shorten, validateStellarAddress, validateAmount, explainError, PAYMENT_TRACKER_CONTRACT_ID, PAYMENT_POLICY_CONTRACT_ID } from './lib/stellar'
 import PolicyCenter from './components/policies/PolicyCenter'
 import ActivityPanel from './components/ActivityPanel'
 import './App.css'
@@ -184,6 +185,7 @@ export default function App() {
   const { fetchPolicies, createPolicy, refresh: refreshPolicies } = usePolicies()
   const { syncState, eventCount, resync } = useEventSync()
 
+  const [_form, setForm] = useState(EMPTY_FORM)
   const [selectedPolicy, setSelectedPolicy] = useState(null)
   const [status, setStatus] = useState({ phase: 'idle', hash: '', message: '' })
   const [busy, setBusy] = useState(false)
@@ -354,7 +356,7 @@ export default function App() {
     setLastAction(null)
   }, [])
 
-  const isContractConfigured = () => /^C[A-Z2-7]{55}$/.test(import.meta.env.VITE_CONTRACT_ID || import.meta.env.VITE_PAYMENT_TRACKER_CONTRACT_ID || '')
+  const isContractConfigured = () => /^C[A-Z2-7]{55}$/.test(PAYMENT_TRACKER_CONTRACT_ID)
 
   return (
     <div className="app-shell">
@@ -483,26 +485,26 @@ export default function App() {
             <span className="eyebrow">CONTRACTS</span>
             <strong>
               {isContractConfigured()
-                ? shorten(import.meta.env.VITE_PAYMENT_TRACKER_CONTRACT_ID || '', 12, 12)
+                ? shorten(PAYMENT_TRACKER_CONTRACT_ID || '', 12, 12)
                 : 'PaymentTracker: not deployed yet'}
             </strong>
           </div>
-          {import.meta.env.VITE_PAYMENT_TRACKER_CONTRACT_ID && (
+          {PAYMENT_TRACKER_CONTRACT_ID && (
             <a
-              href={`https://stellar.expert/explorer/testnet/contract/${import.meta.env.VITE_PAYMENT_TRACKER_CONTRACT_ID}`}
+              href={`https://stellar.expert/explorer/testnet/contract/${PAYMENT_TRACKER_CONTRACT_ID}`}
               target="_blank"
               rel="noreferrer"
             >
               View PaymentTracker on Explorer ↗
             </a>
           )}
-          {import.meta.env.VITE_PAYMENT_POLICY_CONTRACT_ID && (
+          {PAYMENT_POLICY_CONTRACT_ID && (
             <>
               <strong>
-                {shorten(import.meta.env.VITE_PAYMENT_POLICY_CONTRACT_ID, 12, 12)}
+                {shorten(PAYMENT_POLICY_CONTRACT_ID, 12, 12)}
               </strong>
               <a
-                href={`https://stellar.expert/explorer/testnet/contract/${import.meta.env.VITE_PAYMENT_POLICY_CONTRACT_ID}`}
+                href={`https://stellar.expert/explorer/testnet/contract/${PAYMENT_POLICY_CONTRACT_ID}`}
                 target="_blank"
                 rel="noreferrer"
               >

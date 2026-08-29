@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react'
-import { usePolicies } from '../../hooks/useContractOperations'
-import { useWallet } from '../../hooks/useContractOperations'
+import { usePolicies, useWallet } from '../../hooks/useContractOperations'
 import PolicyForm from './PolicyForm'
 import PolicyList from './PolicyList'
 import { shorten } from '../../lib/stellar'

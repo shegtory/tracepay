@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import * as stellar from '../lib/stellar'
 import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit/sdk'
 import { KitEventType, Networks } from '@creit.tech/stellar-wallets-kit/types'
-import { defaultModules } from '@creit.tech/stellar-wallets-kit/modules/utils'
+import { defaultModules } from '@creit.tech/stellar-wallets-kit/modules/utils';
 
 // ── Transaction state machine ────────────────────────────────────────────────
 
@@ -116,6 +116,12 @@ export function useWallet() {
 }
 
 // ── Balance hook ──────────────────────────────────────────────────────────────
+
+export function fetchBalance(address) {
+  return stellar.fetchXlmBalance(address).catch((err) => {
+    throw stellar.explainError(err)
+  })
+}
 
 export function useBalance(address) {
   const [balance, setBalance] = useState(null)
