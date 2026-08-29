@@ -21,43 +21,42 @@ export const PAYMENT_POLICY_CONTRACT_ID = ''
 export const isContractConfigured = () => /^C[A-Z2-7]{55}$/.test(PAYMENT_TRACKER_CONTRACT_ID)
 export const isPolicyConfigured = () => /^C[A-Z2-7]{55}$/.test(PAYMENT_POLICY_CONTRACT_ID)
 
-const horizon = new Horizon.Server(HORIZON_URL)
-export const rpcServer = new rpc.Server(RPC_URL)
+// Lazy-initialized server instances — created on first use, not at module
+// scope, so a failure here cannot prevent React from mounting and rendering
+// the UI (which would otherwise produce a blank/white page in production).
+let _horizonServer = null
+let _rpcServer = null
 
-function paymentTrackerContract() {
-  if (!isContractConfigured()) throw new Error('PaymentTracker contract is not configured. Add VITE_PAYMENT_TRACKER_CONTRACT_ID to .env.local.')
-  return new Contract(PAYMENT_TRACKER_CONTRACT_ID)
-}
-
-function paymentPolicyContract() {
-  if (!isPolicyConfigured()) throw new Error('PaymentPolicy contract is not configured. Add VITE_PAYMENT_POLICY_CONTRACT_ID to .env.local.')
-  return new Contract(PAYMENT_POLICY_CONTRACT_ID)
-}
-
-async function buildContractTransaction(sourceAddress, contractId, operations) {
-  const source = await rpcServer.getAccount(sourceAddress)
-  const transaction = new TransactionBuilder(source, { fee: BASE_FEE, networkPassphrase: NETWORK_PASSPHRASE })
-  for (const op of operations) {
-    transaction.addOperation(op)
+function getHorizonServer() {
+  if (_horizonServer === null) {
+    _horizonServer = new Horizon.Server(HORIZON_URL)
   }
-  const built = transaction.setTimeout(60).build()
-  return rpcServer.prepareTransaction(built)
+  return _horizonServer
 }
 
-async function waitForTransaction(hash, onStatus) {
-  for (let attempt = 0; attempt < 30; attempt += 1) {
-    const result = await rpcServer.getTransaction(hash)
-    if (result.status === 'SUCCESS') return result
-    if (result.status === 'FAILED') throw new Error('Contract transaction failed on-chain.')
-    onStatus?.('pending', hash)
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+function getRpcServer() {
+  if (_rpcServer === null) {
+    _rpcServer = new rpc.Server(RPC_URL)
   }
-  throw new Error('Confirmation timed out. Check the hash on Stellar Expert.')
+  return _rpcServer
+}
+
+// Keep backwards-compatible exports for existing call sites.
+// Callers that imported `rpcServer` directly still work; they just get the
+// lazy wrapper instead of the eager instance.
+export const rpcServer = {
+  getLatestLedger: (...args) => getRpcServer().getLatestLedger(...args),
+  getAccount: (...args) => getRpcServer().getAccount(...args),
+  prepareTransaction: (...args) => getRpcServer().prepareTransaction(...args),
+  simulateTransaction: (...args) => getRpcServer().simulateTransaction(...args),
+  sendTransaction: (...args) => getRpcServer().sendTransaction(...args),
+  getTransaction: (...args) => getRpcServer().getTransaction(...args),
+  getEvents: (...args) => getRpcServer().getEvents(...args),
 }
 
 export async function fetchXlmBalance(publicKey) {
   try {
-    const account = await horizon.loadAccount(publicKey)
+    const account = await getHorizonServer().loadAccount(publicKey)
     return account.balances.find((item) => item.asset_type === 'native')?.balance || '0'
   } catch (error) {
     if (error?.response?.status === 404) return null
