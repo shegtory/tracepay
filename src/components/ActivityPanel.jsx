@@ -1,4 +1,5 @@
 import { shorten } from "../lib/stellar";
+import "./ActivityPanel.css";
 
 /**
  * Event-backed activity panel.
