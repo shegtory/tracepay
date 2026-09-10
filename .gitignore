@@ -3,9 +3,11 @@ dist/
 .env
 .env.local
 target/
+test_snapshots/
 .tools/
 *.log
-HERMES.md
+AGENT_NOTES.md
+.agent/
 *HANDOFF*.md
 *ORCHESTRATION*.md
 AGENTS.md
