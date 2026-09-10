@@ -15,8 +15,9 @@ import { Horizon } from '@stellar/stellar-sdk'
 export const HORIZON_URL = 'https://horizon-testnet.stellar.org'
 export const RPC_URL = 'https://soroban-testnet.stellar.org'
 export const NETWORK_PASSPHRASE = Networks.TESTNET
-export const PAYMENT_TRACKER_CONTRACT_ID = deployment.contractId || ''
-export const PAYMENT_POLICY_CONTRACT_ID = ''
+export const PAYMENT_TRACKER_CONTRACT_ID = import.meta.env.VITE_PAYMENT_TRACKER_CONTRACT_ID || deployment.contractId || ''
+export const PAYMENT_POLICY_CONTRACT_ID = import.meta.env.VITE_PAYMENT_POLICY_CONTRACT_ID || deployment.policyContractId || ''
+export const NATIVE_TOKEN_CONTRACT_ID = Asset.native().contractId(NETWORK_PASSPHRASE)
 
 export const isContractConfigured = () => /^C[A-Z2-7]{55}$/.test(PAYMENT_TRACKER_CONTRACT_ID)
 export const isPolicyConfigured = () => /^C[A-Z2-7]{55}$/.test(PAYMENT_POLICY_CONTRACT_ID)
@@ -54,6 +55,56 @@ export const rpcServer = {
   getEvents: (...args) => getRpcServer().getEvents(...args),
 }
 
+/**
+ * Builds a contract transaction for the given source account and operations.
+ */
+export async function buildContractTransaction(source, operations) {
+  const account = await getRpcServer().getAccount(source)
+  const builder = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+  for (const op of operations) {
+    builder.addOperation(op)
+  }
+  const transaction = builder.setTimeout(60).build()
+  return getRpcServer().prepareTransaction(transaction)
+}
+
+/**
+ * Waits for a transaction to be confirmed on chain.
+ */
+export async function waitForTransaction(hash, onStatus) {
+  let attempts = 0
+  const maxAttempts = 30
+  while (attempts < maxAttempts) {
+    const tx = await getRpcServer().getTransaction(hash)
+    if (tx.status === 'NOT_FOUND') {
+      onStatus?.('waiting', hash)
+      await new Promise((r) => setTimeout(r, 2000))
+      attempts++
+      continue
+    }
+    if (tx.status === 'SUCCESS') return tx
+    throw new Error(`Transaction failed: ${tx.status}`)
+  }
+  throw new Error(`Transaction not found after ${maxAttempts} attempts: ${hash}`)
+}
+
+/**
+ * Returns a Contract instance for the payment tracker.
+ */
+export function paymentTrackerContract() {
+  return new Contract(PAYMENT_TRACKER_CONTRACT_ID)
+}
+
+/**
+ * Returns a Contract instance for the payment policy.
+ */
+export function paymentPolicyContract() {
+  return new Contract(PAYMENT_POLICY_CONTRACT_ID)
+}
+
 export async function fetchXlmBalance(publicKey) {
   try {
     const account = await getHorizonServer().loadAccount(publicKey)
@@ -66,7 +117,7 @@ export async function fetchXlmBalance(publicKey) {
 
 export async function readRecentPayments(limit = 10) {
   const source = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF'
-  const transaction = await buildContractTransaction(source, PAYMENT_TRACKER_CONTRACT_ID, [
+  const transaction = await buildContractTransaction(source, [
     paymentTrackerContract().call('recent', nativeToScVal(limit, { type: 'u32' }))
   ])
   const simulation = await rpcServer.simulateTransaction(transaction)
@@ -87,7 +138,7 @@ export async function readRecentPayments(limit = 10) {
 
 export async function readPaymentById(id) {
   const source = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF'
-  const transaction = await buildContractTransaction(source, PAYMENT_TRACKER_CONTRACT_ID, [
+  const transaction = await buildContractTransaction(source, [
     paymentTrackerContract().call('get', nativeToScVal(id, { type: 'u64' }))
   ])
   const simulation = await rpcServer.simulateTransaction(transaction)
@@ -111,7 +162,7 @@ export async function readPaymentById(id) {
 export async function readPoliciesByOwner(owner) {
   if (!isPolicyConfigured()) return []
   const source = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF'
-  const transaction = await buildContractTransaction(source, PAYMENT_POLICY_CONTRACT_ID, [
+  const transaction = await buildContractTransaction(source, [
     paymentPolicyContract().call('get_policies_by_owner', new Address(owner).toScVal())
   ])
   const simulation = await rpcServer.simulateTransaction(transaction)
@@ -132,7 +183,7 @@ export async function readPoliciesByOwner(owner) {
 export async function readPolicyById(id) {
   if (!isPolicyConfigured()) return null
   const source = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF'
-  const transaction = await buildContractTransaction(source, PAYMENT_POLICY_CONTRACT_ID, [
+  const transaction = await buildContractTransaction(source, [
     paymentPolicyContract().call('get_policy', nativeToScVal(id, { type: 'u64' }))
   ])
   const simulation = await rpcServer.simulateTransaction(transaction)
@@ -155,7 +206,7 @@ export async function readPolicyById(id) {
 export async function readPolicyCount() {
   if (!isPolicyConfigured()) return 0
   const source = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF'
-  const transaction = await buildContractTransaction(source, PAYMENT_POLICY_CONTRACT_ID, [
+  const transaction = await buildContractTransaction(source, [
     paymentPolicyContract().call('policy_count')
   ])
   const simulation = await rpcServer.simulateTransaction(transaction)
@@ -186,12 +237,13 @@ export async function createPolicy(maxAmount, dailyLimit, approvedRecipient, onS
     'create',
     nativeToScVal(BigInt(Math.round(Number(maxAmount) * 10_000_000)), { type: 'i128' }),
     nativeToScVal(dailyLimit > 0 ? BigInt(Math.round(Number(dailyLimit) * 10_000_000)) : 0, { type: 'i128' }),
-    approvedRecipient ? new Address(approvedRecipient).toScVal() : new Address('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF').toScVal()
+    approvedRecipient ? new Address(approvedRecipient).toScVal() : xdr.ScVal.scvVoid(),
+    new Address(address).toScVal(),
   )
 
-  const prepared = await buildContractTransaction(address, PAYMENT_POLICY_CONTRACT_ID, [operation])
-  const xdr = prepared.toXDR()
-  const result = await signAndSendContractTransaction(xdr, onStatus)
+  const prepared = await buildContractTransaction(address, [operation])
+  const preparedXdr = prepared.toXDR()
+  const result = await signAndSendContractTransaction(preparedXdr, onStatus)
   return result
 }
 
@@ -205,12 +257,13 @@ export async function updatePolicy(policyId, maxAmount, dailyLimit, approvedReci
     nativeToScVal(policyId, { type: 'u64' }),
     nativeToScVal(BigInt(Math.round(Number(maxAmount) * 10_000_000)), { type: 'i128' }),
     nativeToScVal(dailyLimit > 0 ? BigInt(Math.round(Number(dailyLimit) * 10_000_000)) : 0, { type: 'i128' }),
-    approvedRecipient ? new Address(approvedRecipient).toScVal() : new Address('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF').toScVal()
+    approvedRecipient ? new Address(approvedRecipient).toScVal() : xdr.ScVal.scvVoid(),
+    new Address(address).toScVal(),
   )
 
-  const prepared = await buildContractTransaction(address, PAYMENT_POLICY_CONTRACT_ID, [operation])
-  const xdr = prepared.toXDR()
-  const result = await signAndSendContractTransaction(xdr, onStatus)
+  const prepared = await buildContractTransaction(address, [operation])
+  const preparedXdr = prepared.toXDR()
+  const result = await signAndSendContractTransaction(preparedXdr, onStatus)
   return result
 }
 
@@ -222,10 +275,11 @@ export async function setPolicyEnabled(policyId, enabled, onStatus) {
   const operation = paymentPolicyContract().call(
     'set_enabled',
     nativeToScVal(policyId, { type: 'u64' }),
-    nativeToScVal(enabled)
+    nativeToScVal(enabled),
+    new Address(address).toScVal(),
   )
 
-  const prepared = await buildContractTransaction(address, PAYMENT_POLICY_CONTRACT_ID, [operation])
+  const prepared = await buildContractTransaction(address, [operation])
   const xdr = prepared.toXDR()
   const result = await signAndSendContractTransaction(xdr, onStatus)
   return result
@@ -290,6 +344,8 @@ export async function sendAndRecordPayment({ sender, destination, amount, memo, 
   return { paymentHash: paymentResult.hash, contractHash: contractResult.hash, result: contractResult.result }
 }
 
+// @ts-ignore - SDK SimulateTransactionErrorResponse type doesn't declare results property
+
 export async function recordPayment({ sender, destination, amount, memo, onStatus }) {
   if (!isContractConfigured()) throw new Error('PaymentTracker contract is not configured.')
 
@@ -301,7 +357,7 @@ export async function recordPayment({ sender, destination, amount, memo, onStatu
     nativeToScVal(memo || 'TracePay payment', { type: 'string' })
   )
 
-  const prepared = await buildContractTransaction(sender, PAYMENT_TRACKER_CONTRACT_ID, [operation])
+  const prepared = await buildContractTransaction(sender, [operation])
   onStatus?.('awaiting-signature')
   const { signedTxXdr } = await StellarWalletsKit.signTransaction(prepared.toXDR(), {
     address: sender,
@@ -326,10 +382,11 @@ export async function recordPolicyProtectedPayment({ sender, destination, amount
     nativeToScVal(BigInt(Math.round(Number(amount) * 10_000_000)), { type: 'i128' }),
     nativeToScVal(memo || 'TracePay policy-protected payment', { type: 'string' }),
     new Address(policyContractId).toScVal(),
-    nativeToScVal(policyId, { type: 'u64' })
+    nativeToScVal(policyId, { type: 'u64' }),
+    new Address(NATIVE_TOKEN_CONTRACT_ID).toScVal(),
   )
 
-  const prepared = await buildContractTransaction(sender, PAYMENT_TRACKER_CONTRACT_ID, [operation])
+  const prepared = await buildContractTransaction(sender, [operation])
   onStatus?.('simulating')
   const simulated = await rpcServer.simulateTransaction(prepared)
   if (!rpc.Api.isSimulationSuccess(simulated)) {

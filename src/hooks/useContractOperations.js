@@ -251,8 +251,10 @@ export function usePayments() {
       const payments = await stellar.readRecentPayments(10)
       setRecentPayments(payments)
       setError(null)
+      return payments
     } catch (err) {
       setError(stellar.explainError(err))
+      return []
     } finally {
       setLoading(false)
     }
