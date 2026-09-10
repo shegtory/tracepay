@@ -155,8 +155,8 @@ function PolicyProtectedPaymentForm({ onSubmit, submitting, selectedPolicy, onCl
           </div>
           <p className="policy-validation-result__description">
             When you submit, PaymentTracker will call PaymentPolicy.validate_and_record().
-            If the policy approves, the payment is recorded. If rejected, you will see which
-            rule failed and the transaction hash for the rejection event.
+            If the policy approves, XLM is transferred and the payment is recorded atomically.
+            If validation fails, no funds move and the wallet displays the rejection.
           </p>
         </div>
       )}
@@ -171,8 +171,8 @@ function PolicyProtectedPaymentForm({ onSubmit, submitting, selectedPolicy, onCl
       </button>
 
       <p className="form-note">
-        This action transfers XLM first, then invokes PaymentTracker.record_with_policy(),
-        which calls PaymentPolicy.validate_and_record() before recording.
+        PaymentTracker validates the policy first, then transfers XLM and records the payment
+        in one atomic contract transaction.
       </p>
     </form>
   )
@@ -311,7 +311,7 @@ export default function App() {
           destination,
           amount,
           memo,
-          policy.policy_contract, // This is the policy contract address
+          PAYMENT_POLICY_CONTRACT_ID,
           policy.id,
           (phase, hash, message) => setStatus({ phase, hash, message })
         )

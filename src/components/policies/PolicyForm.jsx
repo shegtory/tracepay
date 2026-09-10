@@ -29,8 +29,8 @@ export default function PolicyForm({ onCreate, onCancel, submitting, existingPol
     }
     setFormError(null)
     onCreate({
-      maxAmount: Number(maxAmount) * 10_000_000,
-      dailyLimit: dailyLimit ? Number(dailyLimit) * 10_000_000 : 0,
+      maxAmount: Number(maxAmount),
+      dailyLimit: dailyLimit ? Number(dailyLimit) : 0,
       approvedRecipient: approvedRecipient || null,
     })
   }, [maxAmount, dailyLimit, approvedRecipient, onCreate, validate])
@@ -86,7 +86,7 @@ export default function PolicyForm({ onCreate, onCancel, submitting, existingPol
       <div className="policy-form__field">
         <label className="policy-form__label">
           <span>Approved Recipient (optional)</span>
-          <span className="policy-form__hint">Leave empty to allow any sender; enter a G… address to restrict to one sender</span>
+          <span className="policy-form__hint">Leave empty to allow any destination; enter a G… address to restrict payments to one recipient</span>
         </label>
         <input
           type="text"

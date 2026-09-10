@@ -81,7 +81,7 @@ export default function PolicyList({ policies, loading, onSelect, onEdit, onTogg
             )}
             {policy.approved_recipient && (
               <div className="policy-list__row">
-                <span>Approved sender</span>
+                <span>Approved recipient</span>
                 <strong>{shorten(policy.approved_recipient, 6, 6)}</strong>
               </div>
             )}

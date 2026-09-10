@@ -44,7 +44,7 @@ export default function PolicyCenter({ onSelectPolicy, selectedPolicyId, onClear
     setShowForm(true)
   }, [])
 
-  const _handleUpdate = useCallback(async (config) => {
+  const handleUpdate = useCallback(async (config) => {
     if (!editingPolicy) return
     setSubmitting(true)
     try {
@@ -153,12 +153,15 @@ export default function PolicyCenter({ onSelectPolicy, selectedPolicyId, onClear
         </div>
       )}
 
-      <PolicyForm
-        onCreate={handleCreate}
-        onCancel={!editingPolicy ? cancel : undefined}
-        submitting={submitting}
-        existingPolicy={editingPolicy}
-      />
+      {showForm && (
+        <PolicyForm
+          key={editingPolicy?.id || 'new'}
+          onCreate={editingPolicy ? handleUpdate : handleCreate}
+          onCancel={cancel}
+          submitting={submitting}
+          existingPolicy={editingPolicy}
+        />
+      )}
 
       <div className="policy-list-wrapper">
         <h4 className="policy-list-wrapper__title">
