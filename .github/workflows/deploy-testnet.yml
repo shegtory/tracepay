@@ -164,7 +164,7 @@ jobs:
           - Network: Stellar Testnet
           - PaymentTracker: [$TRACKER_ID](https://stellar.expert/explorer/testnet/contract/$TRACKER_ID)
           - PaymentPolicy: [$POLICY_ID](https://stellar.expert/explorer/testnet/contract/$POLICY_ID)
-          - Tracker deployment tx: \`$TRACKER_TX\`
+          - Payment interaction tx: \`$TRACKER_TX\`
           - Policy deployment tx: \`$POLICY_TX\`
           - Inter-contract call tx: \`$POLICY_INTER_TX\`
           - Workflow run: https://github.com/shegtory/tracepay/actions/runs/$RUN_ID
