@@ -1,8 +1,9 @@
 {
   "network": "testnet",
-  "contractId": "CCDDEAVD4IRX352ZOAFSQVP3PTKCJC2AXS3QRB36N7OSM3KMNLZEVZQN",
-  "transactionHash": "c8fabaaed01adf28e4bfd59e886c926c74084eeaba264916db475bb95a76d078",
-  "policyContractId": "",
-  "policyTransactionHash": "",
-  "policyInterTransactionHash": ""
+  "contractId": "CCOTUK7IGNSQVZNZKBL4GWAN44MMT7AXBSDBBDJZY5LFOX4TGDANQSP4",
+  "policyContractId": "CBJXVL4JBLF63BJARMWLD3YEXKOCPV4PUHJ6EOE2TJPMJ3L2QIBY5A77",
+  "transactionHash": "404f8340ba30d88e8b9a68fa3e1bac5566fa37e1d272293190d1db46d4f579bb",
+  "policyTransactionHash": "f216d1ff16e64d40f3b4323e58a7a6f726bdf3741d788ca89cf24c2a87ab8061",
+  "policyInterTransactionHash": "404f8340ba30d88e8b9a68fa3e1bac5566fa37e1d272293190d1db46d4f579bb",
+  "deployedAt": "2026-09-10T12:09:18Z"
 }
