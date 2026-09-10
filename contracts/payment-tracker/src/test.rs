@@ -1,10 +1,35 @@
 use super::*;
-use soroban_sdk::{testutils::Address as _, Address, Env, String};
+use soroban_sdk::{contract, contractimpl, testutils::Address as _, Address, Env, String};
+
+#[contract]
+struct AllowPolicy;
+
+#[contractimpl]
+impl AllowPolicy {
+    pub fn validate_and_record(
+        _env: Env,
+        _policy_id: u64,
+        _sender: Address,
+        _destination: Address,
+        _amount: i128,
+        _caller: Address,
+    ) -> bool {
+        true
+    }
+}
+
+#[contract]
+struct TestToken;
+
+#[contractimpl]
+impl TestToken {
+    pub fn transfer(_env: Env, _from: Address, _to: Address, _amount: i128) {}
+}
 
 #[test]
 fn records_and_reads_payments() {
     let env = Env::default();
-    env.mock_all_auths();
+    env.mock_all_auths_allowing_non_root_auth();
     let contract_id = env.register(PaymentTracker, ());
     let client = PaymentTrackerClient::new(&env, &contract_id);
     let sender = Address::generate(&env);
@@ -28,11 +53,12 @@ fn records_and_reads_payments() {
 #[test]
 fn records_payment_with_policy_reference() {
     let env = Env::default();
-    env.mock_all_auths();
+    env.mock_all_auths_allowing_non_root_auth();
     let tracker_id = env.register(PaymentTracker, ());
     let tracker_client = PaymentTrackerClient::new(&env, &tracker_id);
 
-    let policy_addr = Address::generate(&env);
+    let policy_addr = env.register(AllowPolicy, ());
+    let token_addr = env.register(TestToken, ());
     let policy_id = 1u64;
 
     let sender = Address::generate(&env);
@@ -45,6 +71,7 @@ fn records_payment_with_policy_reference() {
         &String::from_str(&env, "policy-protected payment"),
         &policy_addr,
         &policy_id,
+        &token_addr,
     );
 
     assert_eq!(id, 1);
@@ -55,18 +82,19 @@ fn records_payment_with_policy_reference() {
 
     let policy_payments = tracker_client.payments_by_policy(&policy_id);
     assert_eq!(policy_payments.len(), 1);
-    assert_eq!(policy_payments[0].id, 1);
+    assert_eq!(policy_payments.get(0).unwrap().id, 1);
 }
 
 #[test]
 fn records_multiple_payments_with_different_policies() {
     let env = Env::default();
-    env.mock_all_auths();
+    env.mock_all_auths_allowing_non_root_auth();
     let tracker_id = env.register(PaymentTracker, ());
     let tracker_client = PaymentTrackerClient::new(&env, &tracker_id);
 
-    let policy_a = Address::generate(&env);
-    let policy_b = Address::generate(&env);
+    let policy_a = env.register(AllowPolicy, ());
+    let policy_b = env.register(AllowPolicy, ());
+    let token = env.register(TestToken, ());
     let sender = Address::generate(&env);
 
     let id1 = tracker_client.record_with_policy(
@@ -76,6 +104,7 @@ fn records_multiple_payments_with_different_policies() {
         &String::from_str(&env, "via policy A"),
         &policy_a,
         &1u64,
+        &token,
     );
 
     let id2 = tracker_client.record_with_policy(
@@ -85,9 +114,10 @@ fn records_multiple_payments_with_different_policies() {
         &String::from_str(&env, "via policy B"),
         &policy_b,
         &2u64,
+        &token,
     );
 
-    let id3 = tracker_client.record(
+    let _id3 = tracker_client.record(
         &sender,
         &Address::generate(&env),
         &15_000_000_i128,
@@ -98,17 +128,17 @@ fn records_multiple_payments_with_different_policies() {
 
     let pa_payments = tracker_client.payments_by_policy(&1u64);
     assert_eq!(pa_payments.len(), 1);
-    assert_eq!(pa_payments[0].id, id1);
+    assert_eq!(pa_payments.get(0).unwrap().id, id1);
 
     let pb_payments = tracker_client.payments_by_policy(&2u64);
-    assert_eq!(pb_payments.len(), 1);
-    assert_eq!(pb_payments[0].id, id2);
+    assert_eq!(pa_payments.len(), 1);
+    assert_eq!(pb_payments.get(0).unwrap().id, id2);
 }
 
 #[test]
 fn recent_returns_most_recent_first() {
     let env = Env::default();
-    env.mock_all_auths();
+    env.mock_all_auths_allowing_non_root_auth();
     let tracker_id = env.register(PaymentTracker, ());
     let tracker_client = PaymentTrackerClient::new(&env, &tracker_id);
 
@@ -118,22 +148,22 @@ fn recent_returns_most_recent_first() {
         tracker_client.record(
             &sender,
             &Address::generate(&env),
-            &i * 10_000_000_i128,
-            &String::from_str(&env, &format!("payment-{}", i)),
+            &(i * 10_000_000_i128),
+            &String::from_str(&env, "payment"),
         );
     }
 
     let recent = tracker_client.recent(&3);
     assert_eq!(recent.len(), 3);
-    assert_eq!(recent[0].id, 5);
-    assert_eq!(recent[1].id, 4);
-    assert_eq!(recent[2].id, 3);
+    assert_eq!(recent.get(0).unwrap().id, 5);
+    assert_eq!(recent.get(1).unwrap().id, 4);
+    assert_eq!(recent.get(2).unwrap().id, 3);
 }
 
 #[test]
 fn recent_respects_limit() {
     let env = Env::default();
-    env.mock_all_auths();
+    env.mock_all_auths_allowing_non_root_auth();
     let tracker_id = env.register(PaymentTracker, ());
     let tracker_client = PaymentTrackerClient::new(&env, &tracker_id);
 
@@ -158,7 +188,7 @@ fn recent_respects_limit() {
 #[test]
 fn get_returns_none_for_nonexistent_payment() {
     let env = Env::default();
-    env.mock_all_auths();
+    env.mock_all_auths_allowing_non_root_auth();
     let tracker_id = env.register(PaymentTracker, ());
     let tracker_client = PaymentTrackerClient::new(&env, &tracker_id);
 
@@ -168,7 +198,7 @@ fn get_returns_none_for_nonexistent_payment() {
 #[test]
 fn preserves_backward_compatibility_without_policy() {
     let env = Env::default();
-    env.mock_all_auths();
+    env.mock_all_auths_allowing_non_root_auth();
     let tracker_id = env.register(PaymentTracker, ());
     let tracker_client = PaymentTrackerClient::new(&env, &tracker_id);
 
