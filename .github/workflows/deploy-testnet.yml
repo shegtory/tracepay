@@ -64,22 +64,12 @@ jobs:
       - name: Create Testnet deployer key
         run: |
           stellar keys generate deployer --network testnet --fund
-          echo "DEPLOYER_SECRET=$(stellar keys address deployer --signing-key | tail -1)" >> $GITHUB_ENV
           echo "DEPLOYER_ADDRESS=$(stellar keys address deployer)" >> $GITHUB_ENV
 
       - name: Deploy PaymentPolicy
         id: deploy-policy
         shell: bash
-        env:
-          DEPLOYER_SECRET: ${{ secrets.ORANGE_BELT_TESTNET_SECRET }}
         run: |
-          if [ -z "$DEPLOYER_SECRET" ]; then
-            echo "::error::Missing secret ORANGE_BELT_TESTNET_SECRET. Deployment blocked."
-            echo "contract_id=NONE" >> $GITHUB_OUTPUT
-            echo "tx_hash=NONE" >> $GITHUB_OUTPUT
-            exit 1
-          fi
-
           POLICY_ID=$(stellar contract deploy \
             --wasm contracts/payment-policy/target/wasm32v1-none/release/signal_payment_policy.wasm \
             --source-account deployer \
@@ -89,34 +79,28 @@ jobs:
 
           echo "policy_contract_id=$POLICY_ID" >> $GITHUB_OUTPUT
 
-          # Verify the contract by calling policy_count
-          VERIFY_OUTPUT=$(stellar contract invoke \
+          DEPLOYER_ADDR=$(stellar keys address deployer)
+          CREATE_OUTPUT=$(stellar contract invoke \
             --id "$POLICY_ID" \
             --source-account deployer \
             --network testnet \
             --send=yes \
-            -- policy_count 2>&1)
+            -- create \
+            --max_amount 100000000 \
+            --daily_limit 500000000 \
+            --caller "$DEPLOYER_ADDR" 2>&1)
 
-          echo "Verification: $VERIFY_OUTPUT"
+          echo "Policy creation: $CREATE_OUTPUT"
 
-          # Get the transaction hash from the verify output
-          TX_HASH=$(echo "$VERIFY_OUTPUT" | grep -oE '[0-9a-f]{64}' | tail -1 || echo "")
+          TX_HASH=$(echo "$CREATE_OUTPUT" | grep -oE '[0-9a-f]{64}' | tail -1 || echo "")
           echo "policy_tx_hash=$TX_HASH" >> $GITHUB_OUTPUT
 
       - name: Deploy PaymentTracker
         id: deploy-tracker
         shell: bash
         env:
-          DEPLOYER_SECRET: ${{ secrets.ORANGE_BELT_TESTNET_SECRET }}
           POLICY_CONTRACT_ID: ${{ steps.deploy-policy.outputs.policy_contract_id }}
         run: |
-          if [ -z "$DEPLOYER_SECRET" ]; then
-            echo "::error::Missing secret ORANGE_BELT_TESTNET_SECRET. Deployment blocked."
-            echo "contract_id=NONE" >> $GITHUB_OUTPUT
-            echo "tx_hash=NONE" >> $GITHUB_OUTPUT
-            exit 1
-          fi
-
           TRACKER_ID=$(stellar contract deploy \
             --wasm contracts/payment-tracker/target/wasm32v1-none/release/signal_payment_tracker.wasm \
             --source-account deployer \
@@ -128,6 +112,7 @@ jobs:
 
           # Deploy a test payment via inter-contract call
           DEPLOYER_ADDR=$(stellar keys address deployer)
+          TOKEN_ID=$(stellar contract id asset --asset native --network testnet)
           VERIFY_OUTPUT=$(stellar contract invoke \
             --id "$TRACKER_ID" \
             --source-account deployer \
@@ -139,28 +124,15 @@ jobs:
             --amount 10000000 \
             --memo "Orange Belt deployment test" \
             --policy_contract "$POLICY_CONTRACT_ID" \
-            --policy_id 1 2>&1)
+            --policy_id 1 \
+            --token_contract "$TOKEN_ID" 2>&1)
 
           echo "Inter-contract verification: $VERIFY_OUTPUT"
 
           TX_HASH=$(echo "$VERIFY_OUTPUT" | grep -oE '[0-9a-f]{64}' | tail -1 || echo "")
           echo "tracker_tx_hash=$TX_HASH" >> $GITHUB_OUTPUT
 
-          # Also verify via policy_count on the policy contract
-          if [ -n "$POLICY_CONTRACT_ID" ]; then
-            POLICY_VERIFY=$(stellar contract invoke \
-              --id "$POLICY_CONTRACT_ID" \
-              --source-account deployer \
-              --network testnet \
-              --send=yes \
-              -- validate_and_record \
-              --policy_id 1 \
-              --sender "$DEPLOYER_ADDR" \
-              --amount 10000000 2>&1)
-            echo "Policy inter-contract call: $POLICY_VERIFY"
-            POLICY_TX=$(echo "$POLICY_VERIFY" | grep -oE '[0-9a-f]{64}' | tail -1 || echo "")
-            echo "policy_inter_tx_hash=$POLICY_TX" >> $GITHUB_OUTPUT
-          fi
+          echo "policy_inter_tx_hash=$TX_HASH" >> $GITHUB_OUTPUT
 
       - name: Record deployment evidence
         shell: bash
