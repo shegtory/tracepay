@@ -17,6 +17,7 @@ export const RPC_URL = 'https://soroban-testnet.stellar.org'
 export const NETWORK_PASSPHRASE = Networks.TESTNET
 export const PAYMENT_TRACKER_CONTRACT_ID = import.meta.env.VITE_PAYMENT_TRACKER_CONTRACT_ID || deployment.contractId || ''
 export const PAYMENT_POLICY_CONTRACT_ID = import.meta.env.VITE_PAYMENT_POLICY_CONTRACT_ID || deployment.policyContractId || ''
+export const INTER_CONTRACT_TRANSACTION_HASH = deployment.policyInterTransactionHash || deployment.transactionHash || ''
 export const NATIVE_TOKEN_CONTRACT_ID = Asset.native().contractId(NETWORK_PASSPHRASE)
 
 export const isContractConfigured = () => /^C[A-Z2-7]{55}$/.test(PAYMENT_TRACKER_CONTRACT_ID)

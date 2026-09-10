@@ -1,12 +1,15 @@
 # TracePay — Orange Belt Payment Control Platform
 
+[![Orange Belt CI](https://github.com/shegtory/tracepay/actions/workflows/ci.yml/badge.svg)](https://github.com/shegtory/tracepay/actions/workflows/ci.yml)
+[![Stellar](https://img.shields.io/badge/Stellar-Testnet-7B61FF)](https://stellar.org/)
+
 TracePay is a multi-wallet Stellar Testnet dApp that transforms payment tracking into a
 production-oriented payment-control and verification platform. It uses two Soroban smart
 contracts — **PaymentTracker** and **PaymentPolicy** — that communicate with each other
 through real inter-contract invocations, enforcing configurable payment policies before
 recording any on-chain payment.
 
-**Live Demo:** _Pending deployment_
+**Live Demo:** _Production alias is being assigned. The Vercel build is successful._
 
 ## Evolution
 
@@ -20,10 +23,12 @@ recording any on-chain payment.
 
 | Contract | Contract ID | Explorer |
 | --- | --- | --- |
-| PaymentTracker | `CB6LYC7FWQTOWHPA3FZRYAOY7QSNUGIPQEN6U3BVCC3YKDDMYQGDHZ2J` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CB6LYC7FWQTOWHPA3FZRYAOY7QSNUGIPQEN6U3BVCC3YKDDMYQGDHZ2J) |
-| PaymentPolicy | _Pending deployment_ | _Pending_ |
+| PaymentTracker | `CCOTUK7IGNSQVZNZKBL4GWAN44MMT7AXBSDBBDJZY5LFOX4TGDANQSP4` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CCOTUK7IGNSQVZNZKBL4GWAN44MMT7AXBSDBBDJZY5LFOX4TGDANQSP4) |
+| PaymentPolicy | `CBJXVL4JBLF63BJARMWLD3YEXKOCPV4PUHJ6EOE2TJPMJ3L2QIBY5A77` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBJXVL4JBLF63BJARMWLD3YEXKOCPV4PUHJ6EOE2TJPMJ3L2QIBY5A77) |
 
-The inter-contract configuration transaction hash will be recorded here after deployment.
+**Verified inter-contract transaction:** [`404f8340ba30d88e8b9a68fa3e1bac5566fa37e1d272293190d1db46d4f579bb`](https://stellar.expert/explorer/testnet/tx/404f8340ba30d88e8b9a68fa3e1bac5566fa37e1d272293190d1db46d4f579bb)
+
+**Successful deployment workflow:** [GitHub Actions run #34474672283](https://github.com/shegtory/tracepay/actions/runs/34474672283)
 
 ## Level 3 Feature List
 
@@ -86,8 +91,8 @@ policy contract address and policy id are provided, the PaymentTracker contract 
 policy contract. PaymentPolicy checks the policy rules (max amount, daily limit, approved
 recipient, enabled status) and returns whether the payment is approved. If approved,
 PaymentTracker records the payment and emits a `payment` event enriched with the policy
-reference. If rejected, PaymentPolicy emits a `policy_rejected` event and PaymentTracker
-aborts the payment and emits a `payment_rejected` event.
+reference. If rejected, the contract returns a deterministic error and the atomic transaction
+rolls back, so no funds, state changes, or misleading success events are committed.
 
 This is **not simulated** in the frontend. The inter-contract call happens on-chain
 between two deployed contracts. The contract tests prove the behavior.

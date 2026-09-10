@@ -36,7 +36,7 @@
 Show the form validation. Click "Create Policy". Show the pending → success state flow with the transaction hash.
 
 **Voiceover:**
-"Now let's create a payment policy. A policy defines rules that payments must satisfy before they can be recorded. We'll set a maximum single payment of 10 XLM, a daily spending limit of 50 XLM, and leave the approved recipient open so any sender can use this policy. When you create the policy, it's deployed to the Stellar Testnet as a Soroban smart contract. The policy owner is the connected wallet — only the owner can update or disable it."
+"Now let's create a payment policy. A policy defines rules that payments must satisfy before they can be recorded. We'll set a maximum single payment of 10 XLM, a daily spending limit of 50 XLM, and leave the approved recipient open so the owner can pay any destination. The policy is stored on the deployed PaymentPolicy contract. The connected wallet owns it, and only that owner can update, disable, or use it."
 
 ---
 
@@ -51,10 +51,10 @@ Show the form validation. Click "Create Policy". Show the pending → success st
 
 ## Segment 5: Showing an Intentionally Rejected Payment (0:55–1:10)
 
-**Visual:** Create a second policy with a very low max amount (e.g., 0.1 XLM). Attempt a payment of 5 XLM against that policy. Show the rejection state with the reason "Payment amount exceeds the policy maximum." Show the transaction hash for the rejection event.
+**Visual:** Create a second policy with a very low max amount (e.g., 0.1 XLM). Attempt a payment of 5 XLM against that policy. Show the client-side policy warning and disabled submit state. Then explain that the same rule is enforced by the contract even if a client bypasses the UI.
 
 **Voiceover:**
-"Now let's see a rejection. Create a policy with a maximum of 0.1 XLM. Try to send 5 XLM against it. The policy rejects the payment because it exceeds the maximum. The rejection is recorded on-chain with a reason, and both the payment rejection event and the policy rejection event are emitted. This is the key advantage of on-chain policies — the rejection is verifiable, not just a frontend check."
+"Now let's see a rejection. This policy allows at most 0.1 XLM, so a 5 XLM payment is blocked immediately. The same check runs inside PaymentPolicy during the cross-contract call. If a client bypasses this interface, the contract still rejects the transaction and Soroban rolls everything back atomically, so no funds move and no false payment record is created."
 
 ---
 
