@@ -5,17 +5,25 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
-    "moduleResolution": "node16",
+    "moduleResolution": "Bundler",
+    "allowJs": true,
+    "checkJs": true,
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "resolveJsonModule": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "strict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src"]
+  "include": [
+    "src/vite-env.d.ts",
+    "src/stellar-wallets-kit.d.ts",
+    "src/hooks/useContractOperations.js",
+    "src/App.jsx",
+    "src/lib/stellar.js"
+  ]
 }

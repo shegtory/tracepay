@@ -45,11 +45,19 @@ declare module '@creit.tech/stellar-wallets-kit/sdk' {
 }
 
 declare module '@creit.tech/stellar-wallets-kit/types' {
-  export type KitEventType =
-    | 'STATE_UPDATED'
-    | 'DISCONNECT'
-    | 'WALLET_SELECTED'
-    | 'HW_ACCOUNTS_FETCHER'
+  export enum KitEventType {
+    STATE_UPDATED = 'STATE_UPDATE',
+    DISCONNECT = 'DISCONNECT',
+    WALLET_SELECTED = 'WALLET_SELECTED',
+  }
+
+  export enum Networks {
+    PUBLIC = 'Public Global Stellar Network ; September 2015',
+    TESTNET = 'Test SDF Network ; September 2015',
+    FUTURENET = 'Test SDF Future Network ; October 2022',
+    SANDBOX = 'Local Sandbox Stellar Network ; September 2022',
+    STANDALONE = 'Standalone Network ; February 2017',
+  }
 }
 
 declare module '@creit.tech/stellar-wallets-kit/modules/utils' {
