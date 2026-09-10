@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit/sdk'
 import { useWallet, useBalance, usePayments, usePolicies, useEventSync, fetchBalance } from './hooks/useContractOperations'
 import { shorten, validateStellarAddress, validateAmount, explainError, PAYMENT_TRACKER_CONTRACT_ID, PAYMENT_POLICY_CONTRACT_ID } from './lib/stellar'
 import PolicyCenter from './components/policies/PolicyCenter'
@@ -28,10 +27,8 @@ function PolicyProtectedPaymentForm({ onSubmit, submitting, selectedPolicy, onCl
       if (sendXLM > maxXLM) {
         return `This payment (${sendXLM} XLM) exceeds the policy maximum (${maxXLM} XLM).`
       }
-      if (selectedPolicy.approved_recipient && selectedPolicy.approved_recipient !== StellarWalletsKit.getState()?.address) {
-        // We check against the connected wallet address
-        // The policy's approved_recipient must match the sender
-        // This is validated on-chain, but we show a warning in the UI
+      if (selectedPolicy.approved_recipient && selectedPolicy.approved_recipient !== destination.trim()) {
+        return 'This destination is not approved by the selected policy.'
       }
     }
     return null
@@ -76,15 +73,17 @@ function PolicyProtectedPaymentForm({ onSubmit, submitting, selectedPolicy, onCl
           <span className="eyebrow">POLICY-PROTECTED PAYMENT</span>
           <h3>Send XLM with policy check</h3>
         </div>
-        <button
-          type="button"
-          className="button ghost"
-          onClick={onClearSelection}
-          disabled={busy}
-          style={{ fontSize: '11px', padding: '6px 10px' }}
-        >
-          Clear policy ↺
-        </button>
+        {selectedPolicy && (
+          <button
+            type="button"
+            className="button ghost"
+            onClick={onClearSelection}
+            disabled={busy}
+            style={{ fontSize: '11px', padding: '6px 10px' }}
+          >
+            Clear policy ↺
+          </button>
+        )}
       </div>
 
       {validationResult && (
@@ -94,12 +93,18 @@ function PolicyProtectedPaymentForm({ onSubmit, submitting, selectedPolicy, onCl
             <span>Max: <strong>{validationResult.maxAmount} XLM</strong></span>
             {validationResult.dailyLimit && <span>Daily: <strong>{validationResult.dailyLimit} XLM</strong></span>}
             {validationResult.approvedRecipient && (
-              <span>Sender: <strong>{shorten(validationResult.approvedRecipient, 6, 6)}</strong></span>
+              <span>Recipient: <strong>{shorten(validationResult.approvedRecipient, 6, 6)}</strong></span>
             )}
           </div>
           <span className="policy-preview__status">
             {validationResult.enabled ? '✓ Policy active — payment will be validated on-chain' : '✗ Policy disabled — enable it before sending'}
           </span>
+        </div>
+      )}
+
+      {!selectedPolicy && (
+        <div className="policy-selection-empty">
+          Select an active policy below before preparing a protected payment.
         </div>
       )}
 
@@ -195,7 +200,7 @@ export default function App() {
 
   const refreshActivity = useCallback(async () => {
     if (!address) {
-      setStatus({ phase: 'error', hash: '', message: 'Connect a wallet first.' })
+      setStatus({ phase: 'idle', hash: '', message: '' })
       return
     }
     try {

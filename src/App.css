@@ -404,6 +404,16 @@ main {
   color: var(--danger);
 }
 
+.policy-selection-empty {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border: 1px dashed #345244;
+  border-radius: 7px;
+  background: rgba(113, 230, 181, .035);
+  color: var(--muted);
+  font: 11px/1.6 DM Mono, monospace;
+}
+
 /* ── Policy validation result ───────────────────────────────────────────────── */
 
 .policy-validation-result {
