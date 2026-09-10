@@ -9,7 +9,7 @@ contracts — **PaymentTracker** and **PaymentPolicy** — that communicate with
 through real inter-contract invocations, enforcing configurable payment policies before
 recording any on-chain payment.
 
-**Live Demo:** _Production alias is being assigned. The Vercel build is successful._
+**Live Demo:** [tracepay-stellar.vercel.app](https://tracepay-stellar.vercel.app/)
 
 ## Evolution
 
@@ -392,7 +392,7 @@ automatically — record it manually following the script.
 - [x] More than 10 meaningful commits
 - [ ] Screenshots captured from real UI/actions
 - [ ] Demo video recorded following the script
-- [ ] Live demo link (after deployment)
+- [x] Public live demo deployed on Vercel
 
 ## Repo Integrity
 
