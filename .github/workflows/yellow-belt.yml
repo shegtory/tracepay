@@ -2,11 +2,6 @@ name: Yellow Belt contract
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "contracts/**"
-      - ".github/workflows/yellow-belt.yml"
 
 permissions:
   contents: write
