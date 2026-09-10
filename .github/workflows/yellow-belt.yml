@@ -84,7 +84,10 @@ jobs:
           {
             "network": "testnet",
             "contractId": "$CONTRACT_ID",
-            "transactionHash": "$TX_HASH"
+            "transactionHash": "$TX_HASH",
+            "policyContractId": "",
+            "policyTransactionHash": "",
+            "policyInterTransactionHash": ""
           }
           EOF
           cat > DEPLOYMENT.md <<EOF
