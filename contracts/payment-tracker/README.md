@@ -28,7 +28,7 @@ Records a payment without policy validation (backward-compatible).
 
 Returns the monotonically increasing payment id.
 
-### `record_with_policy(sender, destination, amount, memo, policy_contract, policy_id) -> u64`
+### `record_with_policy(sender, destination, amount, memo, policy_contract, policy_id, token_contract) -> u64`
 
 Records a payment after validating against a payment policy via inter-contract call.
 If the policy rejects, the transaction panics with the rejection reason and a
@@ -97,7 +97,7 @@ Emitted when a policy-protected payment is rejected.
 
 When `record_with_policy` is called with a policy contract and policy id, the
 PaymentTracker contract makes a real cross-contract invocation to
-`PaymentPolicy.validate_and_record(policy_id, sender, amount)`. The policy returns
+`PaymentPolicy.validate_and_record(policy_id, sender, destination, amount, sender)`. The policy returns
 whether to approve or reject, and PaymentTracker records or aborts accordingly.
 
 ## Authorization

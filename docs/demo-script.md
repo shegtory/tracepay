@@ -31,7 +31,7 @@
 **Visual:** Navigate to the Policy Center panel. Click "+ New Policy". Fill in:
 - Maximum Payment Amount: 10 XLM
 - Daily Spending Limit: 50 XLM
-- Approved Recipient: leave empty (allow any sender)
+- Approved Recipient: leave empty (allow any destination)
 
 Show the form validation. Click "Create Policy". Show the pending → success state flow with the transaction hash.
 
@@ -45,7 +45,7 @@ Show the form validation. Click "Create Policy". Show the pending → success st
 **Visual:** In the payment form, show the policy preview panel appearing when a policy is selected. Show the policy rules: "Max: 10 XLM, Daily: 50 XLM". Fill in a destination address and a small amount (e.g., 2 XLM). Submit the payment. Show the state transitions: preparing → simulating → awaiting wallet approval → submitting → confirming → success.
 
 **Voiceover:**
-"Now we'll make a policy-protected payment. Select the policy and fill in the payment form. Notice the policy preview showing the rules. When you submit, here's what happens on-chain: first, the XLM is transferred. Then, PaymentTracker invokes PaymentPolicy.validate_and_record. The policy checks the amount against the max, the daily limit, and the approved recipient. If everything passes, the policy approves and PaymentTracker records the payment. If anything fails, the payment is rejected and you see which rule was violated."
+"Now we'll make a policy-protected payment. Select the policy and fill in the payment form. PaymentTracker first invokes PaymentPolicy.validate_and_record. Only after approval does it transfer XLM through the native token contract and record the payment. These nested calls are atomic: if any policy rule fails, the entire transaction rolls back and no funds move."
 
 ---
 

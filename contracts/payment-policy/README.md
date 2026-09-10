@@ -13,7 +13,7 @@ _TBD — deployed via the Orange Belt deployment workflow._
 
 ## Methods
 
-### `create(max_amount, daily_limit, approved_recipient) -> u64`
+### `create(max_amount, daily_limit, approved_recipient, caller) -> u64`
 
 Creates a new payment policy. The caller becomes the policy owner.
 
@@ -21,7 +21,7 @@ Creates a new payment policy. The caller becomes the policy owner.
 | --- | --- | --- |
 | `max_amount` | `i128` | Maximum allowed single payment (stroops). Must be > 0. |
 | `daily_limit` | `i128` | Optional daily spending limit (stroops). Pass 0 for no limit. |
-| `approved_recipient` | `Address` | Optional approved sender. Pass empty address to allow any sender. |
+| `approved_recipient` | `Option<Address>` | Optional approved destination. Use None to allow any destination. |
 
 Returns the policy id.
 
@@ -39,7 +39,7 @@ Returns the owner of a policy.
 
 Returns all policies owned by an address.
 
-### `update(id, max_amount, daily_limit, approved_recipient) -> ()`
+### `update(id, max_amount, daily_limit, approved_recipient, caller) -> ()`
 
 Updates a policy's configuration. Only the policy owner can call this.
 
@@ -58,7 +58,7 @@ Enables or disables a policy. Only the policy owner can call this.
 
 **Events emitted:** `PolicyEnabled(id, enabled)`
 
-### `validate_and_record(policy_id, sender, amount) -> bool`
+### `validate_and_record(policy_id, sender, destination, amount, caller) -> bool`
 
 Validates a payment against the policy. If approved, records the usage and emits
 a `PolicyApproved` event. If rejected, records the usage and emits a
@@ -97,7 +97,7 @@ Returns the most recent usage records, capped at 50.
 | `owner` | `Address` | Policy owner |
 | `max_amount` | `i128` | Maximum payment (stroops) |
 | `daily_limit` | `Option<i128>` | Daily limit (None = no limit) |
-| `approved_recipient` | `Option<Address>` | Approved sender (None = any) |
+| `approved_recipient` | `Option<Address>` | Approved destination (None = any) |
 | `enabled` | `bool` | Whether the policy is active |
 | `total_used_today` | `i128` | Running total today (stroops) |
 | `daily_reset_ledger` | `u32` | Ledger of last daily reset |
@@ -168,7 +168,7 @@ A payment is approved by `validate_and_record` when ALL of the following are tru
 
 1. The policy is enabled.
 2. The amount does not exceed `max_amount`.
-3. If `approved_recipient` is set, the sender matches the approved recipient.
+3. If `approved_recipient` is set, the payment destination matches it.
 4. If `daily_limit` is set, the daily usage plus this payment does not exceed the limit.
 
 If any rule fails, the payment is rejected with a specific reason string.

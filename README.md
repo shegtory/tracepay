@@ -38,7 +38,7 @@ The inter-contract configuration transaction hash will be recorded here after de
 - **Real-time synchronization** — initial + incremental sync for both contracts, loading/empty/ready/error states, last synchronized ledger, manual retry/resync, deduplication by event identity, safe polling cleanup, no duplicate React initialization loops
 - **Mobile-responsive** — works at ~375px mobile, tablet, and desktop; no horizontal overflow; touch targets; long Stellar addresses handled
 - **CI pipeline** — npm ci, lint, typecheck, tests, production build for frontend; rustfmt check, contract tests, contract build for contracts; runs on PRs and pushes to main
-- **Deployment workflow** — manually triggered (workflow_dispatch), Testnet-only guard, builds both contracts, deploys PaymentPolicy, deploys/upgrades PaymentTracker, configures inter-contract dependency, outputs real contract IDs and transaction hash, preserves artifacts, uses GitHub Secrets
+- **Deployment workflow** — manually triggered (workflow_dispatch), builds both contracts, creates a funded ephemeral Testnet deployer, deploys both contracts, creates a verification policy, executes an atomic inter-contract payment, records contract IDs and transaction hashes, and preserves WASM artifacts
 - **Contract tests** — PaymentPolicy: create, update, enable/disable, authorization, validation (approved, exceeds limit, unauthorized recipient, disabled policy, daily limit), events. PaymentTracker: record, policy reference, multiple policies, recent ordering, limit, backward compatibility
 - **Frontend tests** — policy form validation, mobile navigation, transaction state rendering, policy approval/rejection display, activity sync + deduplication, wallet/network errors, duplicate-submission prevention
 - **Production-oriented architecture** — feature-based layering (wallet, payments, policies, activity), contract service layer, event service, config, types, utils, test setup
@@ -101,7 +101,7 @@ Source: `contracts/payment-tracker/`
 | Method | Parameters | Returns | Description |
 | --- | --- | --- | --- |
 | `record` | sender, destination, amount, memo | u64 (payment id) | Records a payment without policy validation (backward-compatible) |
-| `record_with_policy` | sender, destination, amount, memo, policy_contract, policy_id | u64 (payment id) | Records a payment after validating against a policy via inter-contract call |
+| `record_with_policy` | sender, destination, amount, memo, policy_contract, policy_id, token_contract | u64 (payment id) | Validates policy, transfers XLM, and records the payment atomically through nested contract calls |
 | `count` | — | u64 | Total number of payments recorded |
 | `get` | id | Option<PaymentRecord> | A single payment record by id |
 | `recent` | limit | Vec<PaymentRecord> | Most recent payments (capped at 20) |
@@ -142,7 +142,7 @@ Source: `contracts/payment-policy/`
 | `get_policies_by_owner` | owner | Vec<Policy> | All policies owned by an address |
 | `update` | id, max_amount, daily_limit, approved_recipient | — | Updates policy configuration (owner only) |
 | `set_enabled` | id, enabled | — | Enables or disables a policy (owner only) |
-| `validate_and_record` | policy_id, sender, amount | bool | Validates a payment against the policy; records usage; emits approval/rejection event |
+| `validate_and_record` | policy_id, sender, destination, amount, caller | bool | Validates a destination and amount against an owner-controlled policy; records usage; emits approval/rejection event |
 | `policy_count` | — | u64 | Total number of policies |
 | `usage_count` | — | u64 | Total number of policy usage records |
 | `recent_usage` | limit | Vec<PolicyUsage> | Most recent policy usage records |
@@ -155,7 +155,7 @@ Source: `contracts/payment-policy/`
 | owner | Address | Policy owner (only this address can update/enable/disable) |
 | max_amount | i128 | Maximum allowed single payment (stroops) |
 | daily_limit | Option<i128> | Optional daily spending limit (stroops); None = no daily limit |
-| approved_recipient | Option<Address> | Optional approved sender; None = any sender allowed |
+| approved_recipient | Option<Address> | Optional approved destination; None = any destination allowed |
 | enabled | bool | Whether the policy is active |
 | total_used_today | i128 | Running total of approved payments today |
 | daily_reset_ledger | u32 | Ledger at which the daily counter last reset |
@@ -205,12 +205,12 @@ Source: `contracts/payment-policy/`
 | Unauthorized policy operation | Non-owner tries to update/disable a policy | "Only the policy owner can update or disable this policy." |
 | Policy disabled | Payment sent to a disabled policy | "This policy is disabled and cannot approve payments." |
 | Payment exceeds limit | Amount > policy max_amount | "Payment amount exceeds the policy maximum." |
-| Recipient not approved | Sender is not the approved recipient | "Sender is not the approved recipient for this policy." |
+| Recipient not approved | Destination is not the approved recipient | "Destination is not the approved recipient for this policy." |
 | Contract simulation failure | RPC simulation returned error | "The contract rejected the transaction. Check the inputs and try again." |
 | Contract invocation failure | On-chain invocation failed | "The contract call failed on-chain. Check the transaction on Stellar Expert." |
 | RPC unavailable | Horizon or Soroban RPC unreachable | "Stellar network is unavailable. Check your connection and try again." |
 | Event synchronization failure | Event poll failed | "Could not synchronize activity. Press resync to retry." |
-| Deployment configuration missing | VITE_CONTRACT_ID not set and no deployment.json | "Deployment pending. Set VITE_CONTRACT_ID after deploying the contract." |
+| Deployment configuration missing | Contract IDs are absent from environment and deployment.json | "Deployment pending. Set the contract IDs after deploying." |
 
 No raw stack traces, XDR, or secrets are exposed to users.
 
@@ -262,7 +262,6 @@ npm run dev
 | --- | --- | --- |
 | `VITE_PAYMENT_TRACKER_CONTRACT_ID` | Yes (after deployment) | Stellar Testnet contract id of PaymentTracker |
 | `VITE_PAYMENT_POLICY_CONTRACT_ID` | Yes (after deployment) | Stellar Testnet contract id of PaymentPolicy |
-| `VITE_CONTRACT_ID` | No (legacy) | Backward-compatible alias for PaymentTracker |
 
 ### Frontend Commands
 
@@ -309,7 +308,7 @@ The deployment workflow `.github/workflows/deploy-testnet.yml` is **manually tri
 (workflow_dispatch). It is Testnet-only and deploys both contracts, configures the
 inter-contract dependency, and outputs real contract IDs and the transaction hash.
 
-See the workflow file for required GitHub Secrets and setup steps.
+The workflow uses a freshly generated and Friendbot-funded Testnet identity, so no deployment secret is required.
 
 ## Security Considerations
 
@@ -326,12 +325,12 @@ See the workflow file for required GitHub Secrets and setup steps.
   format). Invalid inputs panic with clear messages before any state change.
 - **Event privacy**: Events contain only on-chain data (addresses, amounts, ids). No
   private data is emitted.
-- **Secrets management**: Deployment credentials are stored in GitHub Secrets, never in the
-  repository or workflow logs.
+- **Secrets management**: The Testnet workflow generates a short-lived funded identity and
+  never stores a production secret in the repository.
 - **Trust boundaries**:
   - The frontend trusts the connected wallet to sign correctly.
   - The contracts trust the Soroban RPC and the Stellar network.
-  - The deployment workflow trusts GitHub Secrets and the Testnet network.
+  - The deployment workflow trusts GitHub Actions and the Stellar Testnet network.
   - Users trust the deployed contract code (verify via the explorer).
 
 ## Known Limitations
@@ -385,7 +384,7 @@ automatically — record it manually following the script.
 - [x] Contract tests covering both contracts
 - [x] Documentation: all English, no Persian/Farsi characters
 - [x] No secrets, no seed phrases, no internal agent files committed
-- [ ] At least 10 meaningful commits (in progress)
+- [x] More than 10 meaningful commits
 - [ ] Screenshots captured from real UI/actions
 - [ ] Demo video recorded following the script
 - [ ] Live demo link (after deployment)
@@ -397,5 +396,5 @@ source code, comments, UI strings, error messages, tests, README, contracts, wor
 commit messages, and demo materials — is written in English. There are no Persian/Farsi
 characters anywhere in the project.
 
-Internal agent files (`HERMES.md`, prompts, orchestration notes, handoff files) are excluded
-from Git via `.gitignore` and never committed.
+Internal working notes and prompts used during development are excluded via `.gitignore`
+and never committed.
