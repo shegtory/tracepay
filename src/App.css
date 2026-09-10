@@ -286,6 +286,29 @@ main {
   margin: 18px 0;
 }
 
+.form-row label {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.form-row input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 14px 13px;
+  color: #f3f7f4;
+  background: #08110e;
+  font: 13px DM Mono, monospace;
+  outline: 0;
+}
+
+.form-row input:focus {
+  border-color: var(--mint);
+  box-shadow: 0 0 0 3px rgba(113,230,181,.08);
+}
+
 .field {
   display: grid;
   gap: 8px;
@@ -704,7 +727,10 @@ main {
 @media (max-width: 480px) {
   .topbar {
     padding: 12px 16px;
+    gap: 8px;
   }
+
+  .brand { min-width: 0; flex-shrink: 1; }
 
   .brand h1 {
     font-size: 17px;
@@ -746,6 +772,10 @@ main {
   .policy-form__actions {
     flex-direction: column;
   }
+
+  .wallet-area { flex: 0 1 auto; gap: 6px; }
+  .network-pill { display: none; }
+  .wallet-area .button { padding-inline: 11px; white-space: nowrap; }
 
   .contract-strip__links, .site-footer { flex-direction: column; }
 }

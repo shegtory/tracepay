@@ -359,9 +359,11 @@ The workflow uses a freshly generated and Friendbot-funded Testnet identity, so 
 
 ## Screenshots
 
-Screenshots are stored in `docs/screenshots/orange-belt/`. See that folder's README for the
-list of required screenshots. No fake screenshots are included — all must be captured from
-real UI, GitHub Actions, test output, and Stellar Expert.
+| Mobile responsive UI | CI pipeline | 130 passing tests |
+| --- | --- | --- |
+| ![TracePay mobile UI](docs/screenshots/orange-belt/mobile-responsive.png) | ![GitHub Actions CI passing](docs/screenshots/orange-belt/ci-pipeline-passing.png) | ![130 automated tests passing](docs/screenshots/orange-belt/tests-passing.png) |
+
+All evidence is stored in `docs/screenshots/orange-belt/` with reproducible capture scripts.
 
 ## Demo Video
 
@@ -390,7 +392,7 @@ automatically — record it manually following the script.
 - [x] Documentation: all English, no Persian/Farsi characters
 - [x] No secrets, no seed phrases, no internal agent files committed
 - [x] More than 10 meaningful commits
-- [ ] Screenshots captured from real UI/actions
+- [x] Mobile UI, CI, and 130-test evidence captured from real runs
 - [ ] Demo video recorded following the script
 - [x] Public live demo deployed on Vercel
 

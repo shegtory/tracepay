@@ -1,8 +1,19 @@
 # Orange Belt Screenshots
 
-These screenshots must be captured from real UI interactions, GitHub Actions output,
-test results, and Stellar Expert explorer pages. No fake or placeholder screenshots
-are included in this repository.
+These screenshots are captured from real UI rendering, GitHub Actions output, test
+results, and Stellar Expert explorer pages. The automated evidence script uses a real
+390×844 browser viewport and consumes Vitest's machine-readable report; it does not use
+mock screenshots or placeholder data.
+
+## Captured Evidence
+
+- `mobile-responsive.png` — real 390×844 TracePay render
+- `desktop-dashboard.png` — real 1440×1000 TracePay render
+- `ci-pipeline-passing.png` — successful GitHub Actions run with frontend and contract jobs
+- `tests-passing.png` — 130 passing Vitest assertions across 7 test files
+
+Reproduce the UI and CI captures with `npm run capture:screenshots`, and regenerate the
+test evidence with `npm run capture:test-evidence`.
 
 ## Required Screenshots
 

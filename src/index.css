@@ -2,7 +2,7 @@
 :root { font-family: Manrope, system-ui, sans-serif; color: #eef4ef; background: #07100d; font-synthesis: none; text-rendering: optimizeLegibility; }
 * { box-sizing: border-box; }
 html { min-width: 320px; background: #07100d; }
-body { margin: 0; min-width: 320px; min-height: 100vh; background: radial-gradient(circle at 15% -10%, #153428 0, transparent 34rem), #07100d; }
+body { margin: 0; min-width: 320px; min-height: 100vh; overflow-x: hidden; background: radial-gradient(circle at 15% -10%, #153428 0, transparent 34rem), #07100d; }
 button, input { font: inherit; }
 button { cursor: pointer; }
 a { color: inherit; }
