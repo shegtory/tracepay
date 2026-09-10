@@ -186,10 +186,15 @@ impl PaymentTracker {
             return records;
         }
 
-        for id in first..=count {
+        let mut id = count;
+        while id >= first {
             if let Some(record) = Self::get(env.clone(), id) {
                 records.push_back(record);
             }
+            if id == first {
+                break;
+            }
+            id -= 1;
         }
         records
     }

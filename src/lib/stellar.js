@@ -133,7 +133,7 @@ export async function readRecentPayments(limit = 10) {
     policy_id: record.policy_id ? Number(record.policy_id) : null,
     policy_approved: Boolean(record.policy_approved),
     policy_contract: record.policy_contract ? String(record.policy_contract) : null,
-  })).reverse()
+  }))
 }
 
 export async function readPaymentById(id) {
