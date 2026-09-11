@@ -26,7 +26,9 @@ recording any on-chain payment.
 | PaymentTracker | `CCOTUK7IGNSQVZNZKBL4GWAN44MMT7AXBSDBBDJZY5LFOX4TGDANQSP4` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CCOTUK7IGNSQVZNZKBL4GWAN44MMT7AXBSDBBDJZY5LFOX4TGDANQSP4) |
 | PaymentPolicy | `CBJXVL4JBLF63BJARMWLD3YEXKOCPV4PUHJ6EOE2TJPMJ3L2QIBY5A77` | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBJXVL4JBLF63BJARMWLD3YEXKOCPV4PUHJ6EOE2TJPMJ3L2QIBY5A77) |
 
-**Verified inter-contract transaction:** [`404f8340ba30d88e8b9a68fa3e1bac5566fa37e1d272293190d1db46d4f579bb`](https://stellar.expert/explorer/testnet/tx/404f8340ba30d88e8b9a68fa3e1bac5566fa37e1d272293190d1db46d4f579bb)
+**Verified live-demo transaction:** [`d1d924b74f2d70c4d337f3e7a724f83676dde6e42b494f0dd80f7dd52381d446`](https://stellar.expert/explorer/testnet/tx/d1d924b74f2d70c4d337f3e7a724f83676dde6e42b494f0dd80f7dd52381d446)
+
+**Deployment verification transaction:** [`404f8340ba30d88e8b9a68fa3e1bac5566fa37e1d272293190d1db46d4f579bb`](https://stellar.expert/explorer/testnet/tx/404f8340ba30d88e8b9a68fa3e1bac5566fa37e1d272293190d1db46d4f579bb)
 
 **Successful deployment workflow:** [GitHub Actions run #34474672283](https://github.com/shegtory/tracepay/actions/runs/34474672283)
 
@@ -363,12 +365,20 @@ The workflow uses a freshly generated and Friendbot-funded Testnet identity, so 
 | --- | --- | --- |
 | ![TracePay mobile UI](docs/screenshots/orange-belt/mobile-responsive.png) | ![GitHub Actions CI passing](docs/screenshots/orange-belt/ci-pipeline-passing.png) | ![130 automated tests passing](docs/screenshots/orange-belt/tests-passing.png) |
 
+| Wallet connected | Policy created | Policy-protected payment |
+| --- | --- | --- |
+| ![Freighter wallet connected on Testnet](docs/screenshots/orange-belt/wallet-connected.png) | ![Payment policy created successfully](docs/screenshots/orange-belt/policy-created.png) | ![Inter-contract payment succeeded](docs/screenshots/orange-belt/inter-contract-success.png) |
+
+| Stellar Expert proof | Real-time event feed | Policy rejection |
+| --- | --- | --- |
+| ![Successful record_with_policy call on Stellar Expert](docs/screenshots/orange-belt/explorer-interaction.png) | ![Live payment event synchronized](docs/screenshots/orange-belt/realtime-events.png) | ![Over-limit payment blocked by policy validation](docs/screenshots/orange-belt/policy-rejection.png) |
+
 All evidence is stored in `docs/screenshots/orange-belt/` with reproducible capture scripts.
 
 ## Demo Video
 
-A demo script is provided in `docs/demo-script.md`. The video itself is not recorded
-automatically — record it manually following the script.
+Watch the [TracePay Orange Belt demo video](https://drive.google.com/file/d/1E1itD-Pr3mE149ZFxKFXVENCD5wHqf0l/view?usp=sharing).
+The reproducible presentation flow is documented in `docs/demo-script.md`.
 
 ## Submission Checklist
 
@@ -393,7 +403,7 @@ automatically — record it manually following the script.
 - [x] No secrets, no seed phrases, no internal agent files committed
 - [x] More than 10 meaningful commits
 - [x] Mobile UI, CI, and 130-test evidence captured from real runs
-- [ ] Demo video recorded following the script
+- [x] Public demo video recorded and linked
 - [x] Public live demo deployed on Vercel
 
 ## Repo Integrity

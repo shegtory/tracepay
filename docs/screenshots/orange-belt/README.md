@@ -11,6 +11,12 @@ mock screenshots or placeholder data.
 - `desktop-dashboard.png` — real 1440×1000 TracePay render
 - `ci-pipeline-passing.png` — successful GitHub Actions run with frontend and contract jobs
 - `tests-passing.png` — 130 passing Vitest assertions across 7 test files
+- `wallet-connected.png` — Freighter connected on Testnet with live XLM balance
+- `policy-created.png` — successful on-chain policy creation and transaction hash
+- `inter-contract-success.png` — successful policy-protected payment from the live dApp
+- `explorer-interaction.png` — successful `record_with_policy` transaction on Stellar Expert
+- `realtime-events.png` — live payment feed synchronized from Testnet events
+- `policy-rejection.png` — over-limit payment blocked with a clear validation error
 
 Reproduce the UI and CI captures with `npm run capture:screenshots`, and regenerate the
 test evidence with `npm run capture:test-evidence`.
@@ -31,7 +37,7 @@ test evidence with `npm run capture:test-evidence`.
 3. Capture the full viewport
 4. Save as `mobile-responsive.png`
 
-### 2. multi-wallet-connected.png
+### 2. wallet-connected.png
 **Capture:** A screenshot showing:
 - Wallet connected (Freighter, xBull, Albedo, Rabet, or other)
 - Wallet address displayed (shortened)
@@ -41,7 +47,7 @@ test evidence with `npm run capture:test-evidence`.
 **How to capture:**
 1. Connect a Stellar wallet
 2. Capture the topbar showing the connected state
-3. Save as `multi-wallet-connected.png`
+3. Save as `wallet-connected.png`
 
 ### 3. policy-created.png
 **Capture:** A screenshot showing:
@@ -73,20 +79,21 @@ test evidence with `npm run capture:test-evidence`.
 **Capture:** A screenshot showing:
 - A payment rejected by the policy (e.g., exceeds limit or unauthorized recipient)
 - Rejection reason visible
-- Transaction hash for the rejection event visible
+- Clear client-side rejection reason visible before wallet signing
 
 **How to capture:**
-1. Create a policy with a low max amount (e.g., 0.1 XLM)
-2. Attempt a payment exceeding that limit
-3. Capture the error state showing the rejection reason
+1. Select an active policy
+2. Enter a payment exceeding its maximum
+3. Submit the form; validation blocks the transaction before wallet signing
+4. Capture the error state showing the rejection reason
 4. Save as `policy-rejection.png`
 
 ### 6. realtime-events.png
 **Capture:** A screenshot showing:
-- Activity feed with events from both PaymentTracker and PaymentPolicy
+- Activity feed populated from PaymentTracker and PaymentPolicy event queries
 - Sync state indicator showing "Syncing every 6s"
 - Event count visible
-- Multiple payment/policy events visible
+- Indexed event count and the live demo payment visible
 
 **How to capture:**
 1. Wait for events to synchronize
