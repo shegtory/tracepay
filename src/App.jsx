@@ -263,7 +263,12 @@ export default function App() {
       setStatus({ phase: 'error', hash: '', message: 'Amount must be greater than zero.' })
       return
     }
-    if (balance === null || Number(balance) < Number(amount)) {
+    const availableBalance = balance ?? await refreshBalance()
+    if (availableBalance === null) {
+      setStatus({ phase: 'error', hash: '', message: 'Could not verify the wallet balance. Refresh and try again.' })
+      return
+    }
+    if (Number(availableBalance) < Number(amount)) {
       setStatus({ phase: 'error', hash: '', message: 'Insufficient XLM balance for this transaction.' })
       return
     }
@@ -308,6 +313,7 @@ export default function App() {
         await refreshActivity()
       }
     } catch (err) {
+      setStatus({ phase: 'failure', hash: '', message: explainError(err) })
       setLastAction({
         phase: 'failure',
         message: explainError(err),

@@ -147,14 +147,16 @@ export function useBalance(address) {
   }, [address])
 
   const refresh = useCallback(async () => {
-    if (!address) return
+    if (!address) return null
     setLoading(true)
     try {
       const bal = await stellar.fetchXlmBalance(address)
       setBalance(bal)
       setError(null)
+      return bal
     } catch (err) {
       setError(stellar.explainError(err))
+      return null
     } finally {
       setLoading(false)
     }
