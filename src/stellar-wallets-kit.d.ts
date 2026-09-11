@@ -28,7 +28,7 @@ declare module '@creit.tech/stellar-wallets-kit/sdk' {
       network: string
       authModal?: AuthModalOptions
     }): void
-    static getState(): WalletState | null
+    static getAddress(): Promise<{ address: string }>
     static authModal(): Promise<{ address: string; networkPassphrase: string }>
     static getNetwork(): Promise<{ networkPassphrase: string }>
     static disconnect(): void

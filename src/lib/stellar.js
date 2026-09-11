@@ -217,8 +217,9 @@ export async function readPolicyCount() {
 
 async function signAndSendContractTransaction(xdr, onStatus) {
   onStatus?.('awaiting-wallet-approval')
+  const { address } = await StellarWalletsKit.getAddress()
   const { signedTxXdr } = await StellarWalletsKit.signTransaction(xdr, {
-    address: StellarWalletsKit.getState()?.address || '',
+    address,
     networkPassphrase: NETWORK_PASSPHRASE,
   })
   const submitted = await rpcServer.sendTransaction(TransactionBuilder.fromXDR(signedTxXdr, NETWORK_PASSPHRASE))
@@ -231,7 +232,7 @@ async function signAndSendContractTransaction(xdr, onStatus) {
 
 export async function createPolicy(maxAmount, dailyLimit, approvedRecipient, onStatus) {
   if (!isPolicyConfigured()) throw new Error('PaymentPolicy contract is not configured.')
-  const address = StellarWalletsKit.getState()?.address
+  const { address } = await StellarWalletsKit.getAddress()
   if (!address) throw new Error('Wallet is not connected.')
 
   const operation = paymentPolicyContract().call(
@@ -250,7 +251,7 @@ export async function createPolicy(maxAmount, dailyLimit, approvedRecipient, onS
 
 export async function updatePolicy(policyId, maxAmount, dailyLimit, approvedRecipient, onStatus) {
   if (!isPolicyConfigured()) throw new Error('PaymentPolicy contract is not configured.')
-  const address = StellarWalletsKit.getState()?.address
+  const { address } = await StellarWalletsKit.getAddress()
   if (!address) throw new Error('Wallet is not connected.')
 
   const operation = paymentPolicyContract().call(
@@ -270,7 +271,7 @@ export async function updatePolicy(policyId, maxAmount, dailyLimit, approvedReci
 
 export async function setPolicyEnabled(policyId, enabled, onStatus) {
   if (!isPolicyConfigured()) throw new Error('PaymentPolicy contract is not configured.')
-  const address = StellarWalletsKit.getState()?.address
+  const { address } = await StellarWalletsKit.getAddress()
   if (!address) throw new Error('Wallet is not connected.')
 
   const operation = paymentPolicyContract().call(

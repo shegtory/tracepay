@@ -18,7 +18,7 @@ const _mockRpcServer = {
 // Mock WalletKit
 const _mockWalletKit = {
   init: vi.fn(),
-  getState: vi.fn(() => ({ address: 'GDQJQLZ7DJX5OPSQ7A7MZ5323PV6PX2FNQUPWQXSLW3OFCOO7IS7C4LX' })),
+  getAddress: vi.fn(async () => ({ address: 'GDQJQLZ7DJX5OPSQ7A7MZ5323PV6PX2FNQUPWQXSLW3OFCOO7IS7C4LX' })),
   authModal: vi.fn(),
   disconnect: vi.fn(),
   profileModal: vi.fn(),

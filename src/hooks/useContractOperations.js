@@ -171,7 +171,7 @@ export function usePolicies() {
   const [error, setError] = useState(null)
 
   const fetchPolicies = useCallback(async () => {
-    const address = StellarWalletsKit.getState()?.address
+    const { address } = await StellarWalletsKit.getAddress()
     if (!address) {
       setError('Connect a wallet to view your policies.')
       return
@@ -263,7 +263,7 @@ export function usePayments() {
   const submitRegularPayment = useCallback(async (destination, amount, memo, onStatus) => {
     setLoading(true)
     try {
-      const address = StellarWalletsKit.getState()?.address
+      const { address } = await StellarWalletsKit.getAddress()
       if (!address) throw new Error('Wallet is not connected.')
       const result = await stellar.sendAndRecordPayment({
         sender: address,
@@ -285,7 +285,7 @@ export function usePayments() {
   const submitPolicyProtectedPayment = useCallback(async (destination, amount, memo, policyContractId, policyId, onStatus) => {
     setLoading(true)
     try {
-      const address = StellarWalletsKit.getState()?.address
+      const { address } = await StellarWalletsKit.getAddress()
       if (!address) throw new Error('Wallet is not connected.')
       const result = await stellar.recordPolicyProtectedPayment({
         sender: address,
