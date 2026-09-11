@@ -1,17 +1,20 @@
-import { useState, useCallback } from 'react'
-import { usePolicies, useWallet } from '../../hooks/useContractOperations'
+import { useState, useCallback, useEffect } from 'react'
+import { usePolicies } from '../../hooks/useContractOperations'
 import PolicyForm from './PolicyForm'
 import PolicyList from './PolicyList'
 import { shorten } from '../../lib/stellar'
 
-export default function PolicyCenter({ onSelectPolicy, selectedPolicyId, onClearSelection: _onClearSelection }) {
-  const { policies, loading, createPolicy, updatePolicy, setEnabled, refresh } = usePolicies()
-  const { address } = useWallet()
+export default function PolicyCenter({ address, onSelectPolicy, selectedPolicyId, onClearSelection: _onClearSelection }) {
+  const { policies, loading, createPolicy, updatePolicy, setEnabled, refresh } = usePolicies(address)
 
   const [showForm, setShowForm] = useState(false)
   const [editingPolicy, setEditingPolicy] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [lastAction, setLastAction] = useState(null)
+
+  useEffect(() => {
+    if (address) refresh()
+  }, [address, refresh])
 
   const handleCreate = useCallback(async (config) => {
     setSubmitting(true)

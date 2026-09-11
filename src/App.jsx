@@ -454,6 +454,7 @@ export default function App() {
           />
 
           <PolicyCenter
+            address={address}
             onSelectPolicy={setSelectedPolicy}
             selectedPolicyId={selectedPolicy?.id}
             onClearSelection={handleClearPolicy}

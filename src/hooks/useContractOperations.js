@@ -167,15 +167,15 @@ export function useBalance(address) {
 
 // ── Policy operations hook ────────────────────────────────────────────────────
 
-export function usePolicies() {
+export function usePolicies(address) {
   const [policies, setPolicies] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
   const fetchPolicies = useCallback(async () => {
-    const { address } = await StellarWalletsKit.getAddress()
     if (!address) {
-      setError('Connect a wallet to view your policies.')
+      setPolicies([])
+      setError(null)
       return
     }
     setLoading(true)
@@ -188,7 +188,7 @@ export function usePolicies() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [address])
 
   const createPolicy = useCallback(async (maxAmount, dailyLimit, approvedRecipient, onStatus) => {
     setLoading(true)
