@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { useWallet, useBalance, usePayments, useEventSync, fetchBalance } from './hooks/useContractOperations'
+import { useWallet, useBalance, usePayments, useEventSync } from './hooks/useContractOperations'
 import { shorten, validateStellarAddress, validateAmount, explainError, PAYMENT_TRACKER_CONTRACT_ID, PAYMENT_POLICY_CONTRACT_ID, INTER_CONTRACT_TRANSACTION_HASH } from './lib/stellar'
 import PolicyCenter from './components/policies/PolicyCenter'
 import ActivityPanel from './components/ActivityPanel'
@@ -234,17 +234,13 @@ export default function App() {
     setBusy(true)
     setStatus({ phase: 'idle', hash: '', message: '' })
     try {
-      const result = await connect()
-      if (result) {
-        await fetchBalance()
-        await refreshActivity()
-      }
+      await connect()
     } catch (err) {
       setStatus({ phase: 'error', hash: '', message: explainError(err) })
     } finally {
       setBusy(false)
     }
-  }, [connect, fetchBalance, refreshActivity])
+  }, [connect])
 
   const handleDisconnect = useCallback(() => {
     disconnect()
@@ -445,7 +441,7 @@ export default function App() {
         <div className="workspace-grid">
           <PolicyProtectedPaymentForm
             onSubmit={handlePayment}
-            submitting={busy}
+            submitting={busy && status.phase !== 'idle'}
             selectedPolicy={selectedPolicy}
             onClearSelection={handleClearPolicy}
             busy={busy}
